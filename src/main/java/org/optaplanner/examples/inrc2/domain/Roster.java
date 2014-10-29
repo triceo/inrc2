@@ -5,8 +5,13 @@ import java.util.Collection;
 import org.optaplanner.core.api.domain.solution.Solution;
 import org.optaplanner.core.api.score.buildin.bendable.BendableScore;
 
-
 public class Roster implements Solution<BendableScore> {
+
+    @Override
+    public Collection<? extends Object> getProblemFacts() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
     @Override
     public BendableScore getScore() {
@@ -15,15 +20,9 @@ public class Roster implements Solution<BendableScore> {
     }
 
     @Override
-    public void setScore(BendableScore score) {
+    public void setScore(final BendableScore score) {
         // TODO Auto-generated method stub
-        
-    }
 
-    @Override
-    public Collection<? extends Object> getProblemFacts() {
-        // TODO Auto-generated method stub
-        return null;
     }
 
 }
