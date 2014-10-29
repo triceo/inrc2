@@ -12,12 +12,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import org.optaplanner.examples.inrc2.domain.Scenario;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 @RunWith(Parameterized.class)
-public class ScenarioParserTest {
+public class WeekParserTest {
 
     @Parameters(name = "{0}")
     public static Iterable<Object[]> getScenarios() {
@@ -29,7 +28,7 @@ public class ScenarioParserTest {
                 continue;
             } else if (!next.canRead()) {
                 continue;
-            } else if (!next.getName().startsWith("S")) {
+            } else if (!next.getName().startsWith("W")) {
                 continue;
             }
             result.add(new File[]{next});
@@ -37,16 +36,15 @@ public class ScenarioParserTest {
         return result;
     }
 
-    private final File scenario;
+    private final File week;
 
-    public ScenarioParserTest(final File scenario) {
-        this.scenario = scenario;
+    public WeekParserTest(final File week) {
+        this.week = week;
     }
 
     @Test
     public void testParsing() throws JsonProcessingException, IOException {
-        final Scenario result = ScenarioParser.parse(this.scenario);
-        Assert.assertNotNull(result);
+        Assert.assertNotNull(WeekParser.parse(this.week));
     }
 
 }
