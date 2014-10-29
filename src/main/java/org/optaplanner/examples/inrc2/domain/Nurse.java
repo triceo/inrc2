@@ -10,9 +10,15 @@ public class Nurse {
 
     private final String id;
 
+    private final int numPreviousAssignments, numPreviousWorkingWeekends, numPreviousConsecutiveAssignments,
+    numPreviousConsecutiveDaysOn,
+    numPreviousConsecutiveDaysOff;
+
+    private final ShiftType previousAssignedShiftType;
+
     private final Set<Skill> skills;
 
-    public Nurse(final String name, final Contract contract, final Set<Skill> hasSkills) {
+    public Nurse(final String name, final Contract contract, final Set<Skill> hasSkills, final ShiftType previousAssignedShiftType, final int numPreviousAssignments, final int numPreviousConsecutiveAssignments, final int numPreviousConsecutiveDaysOn, final int numPreviousConsecutiveDaysOff, final int numPreviousWorkingWeekends) {
         this.id = name;
         if (contract == null) {
             throw new IllegalArgumentException("No contract for nurse " + name);
@@ -22,6 +28,12 @@ public class Nurse {
             throw new IllegalArgumentException("No skills for nurse " + name);
         }
         this.skills = Collections.unmodifiableSet(new LinkedHashSet<Skill>(hasSkills));
+        this.previousAssignedShiftType = previousAssignedShiftType;
+        this.numPreviousAssignments = numPreviousAssignments;
+        this.numPreviousConsecutiveAssignments = numPreviousConsecutiveAssignments;
+        this.numPreviousConsecutiveDaysOff = numPreviousConsecutiveDaysOff;
+        this.numPreviousConsecutiveDaysOn = numPreviousConsecutiveDaysOn;
+        this.numPreviousWorkingWeekends = numPreviousWorkingWeekends;
     }
 
     public Contract getContract() {
@@ -30,6 +42,30 @@ public class Nurse {
 
     public String getId() {
         return this.id;
+    }
+
+    public int getNumPreviousAssignments() {
+        return this.numPreviousAssignments;
+    }
+
+    public int getNumPreviousConsecutiveAssignments() {
+        return this.numPreviousConsecutiveAssignments;
+    }
+
+    public int getNumPreviousConsecutiveDaysOff() {
+        return this.numPreviousConsecutiveDaysOff;
+    }
+
+    public int getNumPreviousConsecutiveDaysOn() {
+        return this.numPreviousConsecutiveDaysOn;
+    }
+
+    public int getNumPreviousWorkingWeekends() {
+        return this.numPreviousWorkingWeekends;
+    }
+
+    public ShiftType getPreviousAssignedShiftType() {
+        return this.previousAssignedShiftType;
     }
 
     public Set<Skill> getSkills() {
