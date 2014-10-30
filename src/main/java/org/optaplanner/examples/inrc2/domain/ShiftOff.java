@@ -19,4 +19,11 @@ public class ShiftOff {
         return this.when;
     }
 
+    @Override
+    public String toString() {
+        final StringBuilder builder = new StringBuilder();
+        builder.append("ShiftOff [type=").append(this.type).append(", when=").append(this.when).append("]");
+        return builder.toString();
+    }
+
 }

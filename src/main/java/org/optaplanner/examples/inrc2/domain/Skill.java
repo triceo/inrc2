@@ -12,4 +12,11 @@ public class Skill {
         return this.id;
     }
 
+    @Override
+    public String toString() {
+        final StringBuilder builder = new StringBuilder();
+        builder.append("Skill [id=").append(this.id).append("]");
+        return builder.toString();
+    }
+
 }
