@@ -35,6 +35,14 @@ public class ShiftType {
         return this.minConsecutiveAssignments;
     }
 
+    public boolean isAllowedAfter(final ShiftType type) {
+        return type.isAllowedBefore(this);
+    }
+
+    public boolean isAllowedBefore(final ShiftType type) {
+        return !this.forbiddenSuccessions.contains(type);
+    }
+
     @Override
     public String toString() {
         final StringBuilder builder = new StringBuilder();
