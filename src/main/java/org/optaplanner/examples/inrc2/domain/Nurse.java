@@ -11,8 +11,7 @@ public class Nurse {
     private final String id;
 
     private final int numPreviousAssignments, numPreviousWorkingWeekends, numPreviousConsecutiveAssignments,
-    numPreviousConsecutiveDaysOn,
-    numPreviousConsecutiveDaysOff;
+            numPreviousConsecutiveDaysOn, numPreviousConsecutiveDaysOff;
 
     private final ShiftType previousAssignedShiftType;
 

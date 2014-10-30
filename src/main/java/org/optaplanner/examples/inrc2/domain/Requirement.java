@@ -15,6 +15,9 @@ public class Requirement {
     private final Skill skill;
 
     public Requirement(final ShiftType shiftType, final Skill skill, final Pair<Integer, Integer> monday, final Pair<Integer, Integer> tuesday, final Pair<Integer, Integer> wednesday, final Pair<Integer, Integer> thursday, final Pair<Integer, Integer> friday, final Pair<Integer, Integer> saturday, final Pair<Integer, Integer> sunday) {
+        if (shiftType == null || skill == null) {
+            throw new IllegalStateException("Neither shift type nor skill may be null.");
+        }
         this.shiftType = shiftType;
         this.skill = skill;
         this.minimalRequirement[0] = monday.getFirst();
