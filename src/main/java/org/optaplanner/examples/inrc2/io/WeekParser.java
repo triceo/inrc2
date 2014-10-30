@@ -36,6 +36,7 @@ public class WeekParser {
             final Pair<Integer, Integer> sunday = WeekParser.getRequirement(node2.get("requirementOnSunday"));
             requirements.add(new WeekData(shiftTypeId, skillId, monday, tuesday, wednesday, thursday, friday, saturday, sunday));
         }
+        // FIXME implement day-off requests
         return Collections.unmodifiableList(requirements);
     }
 
