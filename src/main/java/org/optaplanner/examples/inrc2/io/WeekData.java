@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.apache.commons.math3.util.Pair;
 
-class Requirement {
+class WeekData {
 
     private final List<Pair<Integer, Integer>> requirements;
 
@@ -13,7 +13,7 @@ class Requirement {
 
     private final String skillId;
 
-    public Requirement(final String shiftTypeId, final String skillId, final Pair<Integer, Integer>... days) {
+    public WeekData(final String shiftTypeId, final String skillId, final Pair<Integer, Integer>... days) {
         if (days.length < 7) {
             throw new IllegalArgumentException("Need 1 requirement for each day of the week.");
         }

@@ -4,7 +4,7 @@ import java.util.Arrays;
 
 import org.apache.commons.math3.util.Pair;
 
-public class WeeklyRequirement {
+public class Requirement {
 
     private final int[] minimalRequirement = new int[7];
 
@@ -14,7 +14,7 @@ public class WeeklyRequirement {
 
     private final Skill skill;
 
-    public WeeklyRequirement(final ShiftType shiftType, final Skill skill, final Pair<Integer, Integer> monday, final Pair<Integer, Integer> tuesday, final Pair<Integer, Integer> wednesday, final Pair<Integer, Integer> thursday, final Pair<Integer, Integer> friday, final Pair<Integer, Integer> saturday, final Pair<Integer, Integer> sunday) {
+    public Requirement(final ShiftType shiftType, final Skill skill, final Pair<Integer, Integer> monday, final Pair<Integer, Integer> tuesday, final Pair<Integer, Integer> wednesday, final Pair<Integer, Integer> thursday, final Pair<Integer, Integer> friday, final Pair<Integer, Integer> saturday, final Pair<Integer, Integer> sunday) {
         this.shiftType = shiftType;
         this.skill = skill;
         this.minimalRequirement[0] = monday.getFirst();

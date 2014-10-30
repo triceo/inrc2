@@ -15,7 +15,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
-import org.optaplanner.examples.inrc2.domain.Scenario;
+import org.optaplanner.examples.inrc2.domain.Roster;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -79,8 +79,8 @@ public class ScenarioParserTest {
     @Test
     public void testParsing() throws JsonProcessingException, IOException {
         final Pair<Integer, SortedMap<String, NurseHistory>> h = HistoryParser.parse(this.nurseHistory);
-        final Collection<Requirement> requirements = WeekParser.parse(this.week);
-        final Scenario result = ScenarioParser.parse(this.scenario, h.getSecond(), h.getFirst(), requirements);
+        final Collection<WeekData> requirements = WeekParser.parse(this.week);
+        final Roster result = ScenarioParser.parse(this.scenario, h.getSecond(), h.getFirst(), requirements);
         Assert.assertNotNull(result);
     }
 

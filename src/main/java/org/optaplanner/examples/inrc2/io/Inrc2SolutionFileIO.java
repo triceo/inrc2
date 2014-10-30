@@ -1,7 +1,10 @@
 package org.optaplanner.examples.inrc2.io;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.SortedMap;
 
+import org.apache.commons.math3.util.Pair;
 import org.optaplanner.core.api.domain.solution.Solution;
 import org.optaplanner.persistence.common.api.domain.solution.SolutionFileIO;
 
@@ -26,8 +29,16 @@ public class Inrc2SolutionFileIO implements SolutionFileIO {
 
     @Override
     public Solution read(final File arg0) {
-        // TODO Auto-generated method stub
-        return null;
+        final File scenario = new File(arg0, Inrc2SolutionFileIO.SCENARIO_FILENAME);
+        final File history = new File(arg0, Inrc2SolutionFileIO.HISTORY_FILENAME);
+        final File week = new File(arg0, Inrc2SolutionFileIO.WEEK_DATA_FILENAME);
+        try {
+            final Pair<Integer, SortedMap<String, NurseHistory>> histories = HistoryParser.parse(history);
+            final Collection<WeekData> requirements = WeekParser.parse(week);
+            return ScenarioParser.parse(scenario, histories.getSecond(), histories.getFirst(), requirements);
+        } catch (final Exception e) {
+            throw new IllegalStateException("Parser failure.", e);
+        }
     }
 
     @Override

@@ -20,10 +20,10 @@ public class WeekParser {
     }
 
     @SuppressWarnings("unchecked")
-    public static List<Requirement> parse(final File json) throws JsonProcessingException, IOException {
+    public static List<WeekData> parse(final File json) throws JsonProcessingException, IOException {
         final ObjectMapper om = new ObjectMapper();
         final JsonNode node = om.readTree(json);
-        final List<Requirement> requirements = new ArrayList<Requirement>();
+        final List<WeekData> requirements = new ArrayList<WeekData>();
         for (final JsonNode node2 : (ArrayNode) node.withArray("requirements")) {
             final String shiftTypeId = node2.get("shiftType").asText();
             final String skillId = node2.get("skill").asText();
@@ -34,7 +34,7 @@ public class WeekParser {
             final Pair<Integer, Integer> friday = WeekParser.getRequirement(node2.get("requirementOnFriday"));
             final Pair<Integer, Integer> saturday = WeekParser.getRequirement(node2.get("requirementOnSaturday"));
             final Pair<Integer, Integer> sunday = WeekParser.getRequirement(node2.get("requirementOnSunday"));
-            requirements.add(new Requirement(shiftTypeId, skillId, monday, tuesday, wednesday, thursday, friday, saturday, sunday));
+            requirements.add(new WeekData(shiftTypeId, skillId, monday, tuesday, wednesday, thursday, friday, saturday, sunday));
         }
         return Collections.unmodifiableList(requirements);
     }
