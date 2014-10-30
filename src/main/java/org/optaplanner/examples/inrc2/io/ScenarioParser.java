@@ -17,9 +17,11 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import org.optaplanner.examples.inrc2.domain.Contract;
+import org.optaplanner.examples.inrc2.domain.DayOfWeek;
 import org.optaplanner.examples.inrc2.domain.Nurse;
 import org.optaplanner.examples.inrc2.domain.Requirement;
 import org.optaplanner.examples.inrc2.domain.Roster;
+import org.optaplanner.examples.inrc2.domain.ShiftOff;
 import org.optaplanner.examples.inrc2.domain.ShiftType;
 import org.optaplanner.examples.inrc2.domain.Skill;
 
@@ -30,7 +32,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 
 public class ScenarioParser {
 
-    public static Roster parse(final File json, final SortedMap<String, NurseHistory> histories, final int weekNumber, final Collection<WeekData> week) throws JsonProcessingException, IOException {
+    public static Roster parse(final File json, final SortedMap<String, NurseHistory> histories, final int weekNumber, final Collection<WeekData> week, final Collection<ShiftOffRequest> shiftsOff) throws JsonProcessingException, IOException {
         final ObjectMapper om = new ObjectMapper();
         final JsonNode node = om.readTree(json);
         final String scenarioId = node.get("id").asText();
@@ -39,7 +41,7 @@ public class ScenarioParser {
         final SortedMap<String, SortedSet<String>> forbiddenShiftSuccessions = ScenarioParser.parseForbiddenShiftSuccessions((ArrayNode) node.withArray("forbiddenShiftTypeSuccessions"));
         final SortedMap<String, ShiftType> shiftTypes = ScenarioParser.parseShiftTypes((ArrayNode) node.withArray("shiftTypes"), forbiddenShiftSuccessions);
         final SortedMap<String, Contract> contracts = ScenarioParser.parseContracts((ArrayNode) node.withArray("contracts"));
-        final SortedMap<String, Nurse> nurses = ScenarioParser.parseNurses((ArrayNode) node.withArray("nurses"), contracts, shiftTypes, skills, histories);
+        final SortedMap<String, Nurse> nurses = ScenarioParser.parseNurses((ArrayNode) node.withArray("nurses"), contracts, shiftTypes, skills, histories, shiftsOff);
         final List<Requirement> requirements = ScenarioParser.parseRequirements(week, skills, shiftTypes);
         return new Roster(scenarioId, numberOfWeeks, weekNumber, nurses, contracts, shiftTypes, skills, requirements);
     }
@@ -61,6 +63,26 @@ public class ScenarioParser {
         return Collections.unmodifiableSortedMap(result);
     }
 
+    private static DayOfWeek parseDay(final String day) {
+        if (day.equals("Monday")) {
+            return DayOfWeek.MONDAY;
+        } else if (day.equals("Tuesday")) {
+            return DayOfWeek.TUESDAY;
+        } else if (day.equals("Wednesday")) {
+            return DayOfWeek.WEDNESDAY;
+        } else if (day.equals("Thursday")) {
+            return DayOfWeek.THURSDAY;
+        } else if (day.equals("Friday")) {
+            return DayOfWeek.FRIDAY;
+        } else if (day.equals("Saturday")) {
+            return DayOfWeek.SATURDAY;
+        } else if (day.equals("Sunday")) {
+            return DayOfWeek.SUNDAY;
+        } else {
+            throw new IllegalArgumentException("Unknown day type: " + day);
+        }
+    }
+
     private static SortedMap<String, SortedSet<String>> parseForbiddenShiftSuccessions(final ArrayNode withArray) {
         final SortedMap<String, SortedSet<String>> result = new TreeMap<String, SortedSet<String>>();
         for (final JsonNode node : withArray) {
@@ -74,7 +96,7 @@ public class ScenarioParser {
         return Collections.unmodifiableSortedMap(result);
     }
 
-    private static SortedMap<String, Nurse> parseNurses(final ArrayNode withArray, final SortedMap<String, Contract> contracts, final SortedMap<String, ShiftType> shiftTypes, final SortedMap<String, Skill> skills, final SortedMap<String, NurseHistory> history) {
+    private static SortedMap<String, Nurse> parseNurses(final ArrayNode withArray, final SortedMap<String, Contract> contracts, final SortedMap<String, ShiftType> shiftTypes, final SortedMap<String, Skill> skills, final SortedMap<String, NurseHistory> history, final Collection<ShiftOffRequest> requests) {
         final SortedMap<String, Nurse> result = new TreeMap<String, Nurse>();
         for (final JsonNode node : withArray) {
             final String name = node.get("id").asText();
@@ -90,7 +112,25 @@ public class ScenarioParser {
             final int numPreviousConsecutiveDaysOff = nurseHistory.getNumConsecutiveDaysOff();
             final int numPreviousConsecutiveDaysOn = nurseHistory.getNumConsecutiveDaysOn();
             final int numPreviousWorkingWeekends = nurseHistory.getNumWorkingWeekends();
-            result.put(name, new Nurse(name, contract, hasSkills, previousAssignedShiftType, numPreviousAssignments, numPreviousConsecutiveAssignments, numPreviousConsecutiveDaysOn, numPreviousConsecutiveDaysOff, numPreviousWorkingWeekends));
+            // shift off requests
+            final Set<ShiftOff> shiftsOff = new LinkedHashSet<ShiftOff>();
+            for (final ShiftOffRequest request : requests) {
+                if (!request.getNurseId().equals(name)) {
+                    continue;
+                }
+                final DayOfWeek d = ScenarioParser.parseDay(request.getDay());
+                final ShiftType st = shiftTypes.get(request.getShiftTypeId());
+                if (st == null) {
+                    // every shift
+                    for (final ShiftType type : shiftTypes.values()) {
+                        shiftsOff.add(new ShiftOff(d, type));
+                    }
+                } else {
+                    // just the one shift
+                    shiftsOff.add(new ShiftOff(d, st));
+                }
+            }
+            result.put(name, new Nurse(name, contract, hasSkills, shiftsOff, previousAssignedShiftType, numPreviousAssignments, numPreviousConsecutiveAssignments, numPreviousConsecutiveDaysOn, numPreviousConsecutiveDaysOff, numPreviousWorkingWeekends));
         }
         return Collections.unmodifiableSortedMap(result);
     }

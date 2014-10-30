@@ -3,7 +3,6 @@ package org.optaplanner.examples.inrc2.io;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.SortedMap;
@@ -79,8 +78,8 @@ public class ScenarioParserTest {
     @Test
     public void testParsing() throws JsonProcessingException, IOException {
         final Pair<Integer, SortedMap<String, NurseHistory>> h = HistoryParser.parse(this.nurseHistory);
-        final Collection<WeekData> requirements = WeekParser.parse(this.week);
-        final Roster result = ScenarioParser.parse(this.scenario, h.getSecond(), h.getFirst(), requirements);
+        final Pair<List<ShiftOffRequest>, List<WeekData>> requirements = WeekParser.parse(this.week);
+        final Roster result = ScenarioParser.parse(this.scenario, h.getSecond(), h.getFirst(), requirements.getSecond(), requirements.getFirst());
         Assert.assertNotNull(result);
     }
 

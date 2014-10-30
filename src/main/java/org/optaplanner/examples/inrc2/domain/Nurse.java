@@ -1,7 +1,10 @@
 package org.optaplanner.examples.inrc2.domain;
 
 import java.util.Collections;
+import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 public class Nurse {
@@ -15,9 +18,11 @@ public class Nurse {
 
     private final ShiftType previousAssignedShiftType;
 
+    private final Map<DayOfWeek, Set<ShiftType>> requestedShiftsOff = new EnumMap<DayOfWeek, Set<ShiftType>>(DayOfWeek.class);
+
     private final Set<Skill> skills;
 
-    public Nurse(final String name, final Contract contract, final Set<Skill> hasSkills, final ShiftType previousAssignedShiftType, final int numPreviousAssignments, final int numPreviousConsecutiveAssignments, final int numPreviousConsecutiveDaysOn, final int numPreviousConsecutiveDaysOff, final int numPreviousWorkingWeekends) {
+    public Nurse(final String name, final Contract contract, final Set<Skill> hasSkills, final Set<ShiftOff> shiftsOff, final ShiftType previousAssignedShiftType, final int numPreviousAssignments, final int numPreviousConsecutiveAssignments, final int numPreviousConsecutiveDaysOn, final int numPreviousConsecutiveDaysOff, final int numPreviousWorkingWeekends) {
         this.id = name;
         if (contract == null) {
             throw new IllegalArgumentException("No contract for nurse " + name);
@@ -33,6 +38,13 @@ public class Nurse {
         this.numPreviousConsecutiveDaysOff = numPreviousConsecutiveDaysOff;
         this.numPreviousConsecutiveDaysOn = numPreviousConsecutiveDaysOn;
         this.numPreviousWorkingWeekends = numPreviousWorkingWeekends;
+        for (final ShiftOff off : shiftsOff) {
+            final DayOfWeek when = off.getWhen();
+            if (!this.requestedShiftsOff.containsKey(when)) {
+                this.requestedShiftsOff.put(when, new HashSet<ShiftType>());
+            }
+            this.requestedShiftsOff.get(when).add(off.getType());
+        }
     }
 
     public Contract getContract() {
@@ -71,10 +83,18 @@ public class Nurse {
         return this.skills;
     }
 
+    public boolean shiftOffRequested(final DayOfWeek day, final ShiftType type) {
+        if (!this.requestedShiftsOff.containsKey(day)) {
+            return false;
+        } else {
+            return this.requestedShiftsOff.get(day).contains(type);
+        }
+    }
+
     @Override
     public String toString() {
         final StringBuilder builder = new StringBuilder();
-        builder.append("Nurse [id=").append(this.id).append(", contract=").append(this.contract).append(", skills=").append(this.skills).append("]");
+        builder.append("Nurse [id=").append(this.id).append(", contract=").append(this.contract).append(", skills=").append(this.skills).append(", requestedShiftsOff=").append(this.requestedShiftsOff).append(", numPreviousAssignments=").append(this.numPreviousAssignments).append(", numPreviousWorkingWeekends=").append(this.numPreviousWorkingWeekends).append(", numPreviousConsecutiveAssignments=").append(this.numPreviousConsecutiveAssignments).append(", numPreviousConsecutiveDaysOn=").append(this.numPreviousConsecutiveDaysOn).append(", numPreviousConsecutiveDaysOff=").append(this.numPreviousConsecutiveDaysOff).append(", previousAssignedShiftType=").append(this.previousAssignedShiftType).append("]");
         return builder.toString();
     }
 

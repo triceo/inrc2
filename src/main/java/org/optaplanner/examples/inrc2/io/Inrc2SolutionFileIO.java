@@ -1,7 +1,7 @@
 package org.optaplanner.examples.inrc2.io;
 
 import java.io.File;
-import java.util.Collection;
+import java.util.List;
 import java.util.SortedMap;
 
 import org.apache.commons.math3.util.Pair;
@@ -34,8 +34,8 @@ public class Inrc2SolutionFileIO implements SolutionFileIO {
         final File week = new File(arg0, Inrc2SolutionFileIO.WEEK_DATA_FILENAME);
         try {
             final Pair<Integer, SortedMap<String, NurseHistory>> histories = HistoryParser.parse(history);
-            final Collection<WeekData> requirements = WeekParser.parse(week);
-            return ScenarioParser.parse(scenario, histories.getSecond(), histories.getFirst(), requirements);
+            final Pair<List<ShiftOffRequest>, List<WeekData>> weekData = WeekParser.parse(week);
+            return ScenarioParser.parse(scenario, histories.getSecond(), histories.getFirst(), weekData.getSecond(), weekData.getFirst());
         } catch (final Exception e) {
             throw new IllegalStateException("Parser failure.", e);
         }

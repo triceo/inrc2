@@ -20,7 +20,7 @@ public class WeekParser {
     }
 
     @SuppressWarnings("unchecked")
-    public static List<WeekData> parse(final File json) throws JsonProcessingException, IOException {
+    public static Pair<List<ShiftOffRequest>, List<WeekData>> parse(final File json) throws JsonProcessingException, IOException {
         final ObjectMapper om = new ObjectMapper();
         final JsonNode node = om.readTree(json);
         final List<WeekData> requirements = new ArrayList<WeekData>();
@@ -36,8 +36,14 @@ public class WeekParser {
             final Pair<Integer, Integer> sunday = WeekParser.getRequirement(node2.get("requirementOnSunday"));
             requirements.add(new WeekData(shiftTypeId, skillId, monday, tuesday, wednesday, thursday, friday, saturday, sunday));
         }
-        // FIXME implement day-off requests
-        return Collections.unmodifiableList(requirements);
+        final List<ShiftOffRequest> requests = new ArrayList<ShiftOffRequest>();
+        for (final JsonNode node2 : (ArrayNode) node.withArray("shiftOffRequests")) {
+            final String shiftTypeId = node2.get("shiftType").asText();
+            final String nurseId = node2.get("nurse").asText();
+            final String day = node2.get("day").asText();
+            requests.add(new ShiftOffRequest(shiftTypeId, nurseId, day));
+        }
+        return new Pair<List<ShiftOffRequest>, List<WeekData>>(Collections.unmodifiableList(requests), Collections.unmodifiableList(requirements));
     }
 
 }
