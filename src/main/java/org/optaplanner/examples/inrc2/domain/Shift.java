@@ -16,14 +16,13 @@ public class Shift {
     private ShiftType shiftType;
 
     private Skill skill;
-    
+
     protected Shift() {
         // Planner cloning prevent immutability
     }
 
-    protected Shift(final Nurse nurse, final ShiftType shiftType, final DayOfWeek day) {
+    protected Shift(final Nurse nurse, final DayOfWeek day) {
         this.nurse = nurse;
-        this.shiftType = shiftType;
         this.day = day;
     }
 
@@ -40,6 +39,7 @@ public class Shift {
         return this.getNurse().getSkills();
     }
 
+    @PlanningVariable(valueRangeProviderRefs = "shiftType")
     public ShiftType getShiftType() {
         return this.shiftType;
     }

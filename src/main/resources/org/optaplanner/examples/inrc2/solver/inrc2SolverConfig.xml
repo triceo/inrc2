@@ -20,8 +20,20 @@
   </constructionHeuristic>
   <localSearch>
     <unionMoveSelector>
-      <changeMoveSelector />
-      <swapMoveSelector />
+      <changeMoveSelector>
+        <valueSelector>
+          <variableName>skill</variableName>
+        </valueSelector>
+      </changeMoveSelector>
+      <changeMoveSelector>
+        <valueSelector>
+          <variableName>shiftType</variableName>
+        </valueSelector>
+      </changeMoveSelector>
+      <swapMoveSelector>
+        <variableNameInclude>shiftType</variableNameInclude>
+        <variableNameInclude>skill</variableNameInclude>
+      </swapMoveSelector>
     </unionMoveSelector>
     <acceptor>
       <lateAcceptanceSize>400</lateAcceptanceSize>

@@ -11,6 +11,7 @@ import java.util.SortedMap;
 import org.optaplanner.core.api.domain.solution.PlanningEntityCollectionProperty;
 import org.optaplanner.core.api.domain.solution.PlanningSolution;
 import org.optaplanner.core.api.domain.solution.Solution;
+import org.optaplanner.core.api.domain.valuerange.ValueRangeProvider;
 import org.optaplanner.core.api.score.buildin.bendable.BendableScore;
 
 @PlanningSolution
@@ -73,10 +74,8 @@ public class Roster implements Solution<BendableScore> {
         this.requirements = new LinkedHashSet<Requirement>(requirements);
         // and now create the entities
         for (final DayOfWeek day : DayOfWeek.values()) {
-            for (final ShiftType type : this.shiftTypes) {
-                for (final Nurse nurse : this.nurses) {
-                    this.shifts.add(new Shift(nurse, type, day));
-                }
+            for (final Nurse nurse : this.nurses) {
+                this.shifts.add(new Shift(nurse, day));
             }
         }
     }
@@ -141,6 +140,7 @@ public class Roster implements Solution<BendableScore> {
         return this.shiftTypesById.get(id);
     }
 
+    @ValueRangeProvider(id = "shiftType")
     public Set<ShiftType> getShiftTypes() {
         return this.shiftTypes;
     }
