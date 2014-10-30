@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 
+import org.optaplanner.core.api.domain.solution.PlanningEntityCollectionProperty;
 import org.optaplanner.core.api.domain.solution.PlanningSolution;
 import org.optaplanner.core.api.domain.solution.Solution;
 import org.optaplanner.core.api.score.buildin.bendable.BendableScore;
@@ -37,6 +38,8 @@ public class Roster implements Solution<BendableScore> {
 
     private BendableScore score;
 
+    private final Set<Shift> shifts = new LinkedHashSet<Shift>();
+
     private Set<ShiftType> shiftTypes;
 
     private SortedMap<String, ShiftType> shiftTypesById;
@@ -47,7 +50,7 @@ public class Roster implements Solution<BendableScore> {
     private SortedMap<String, Skill> skillsById;
 
     protected Roster() {
-        // planner cloning prevent immutability
+        // planner cloning prevents immutability
     }
 
     public Roster(final String id, final int totalNumberOfWeeks, final int currentWeekNumber, final SortedMap<String, Nurse> nurses, final SortedMap<String, Contract> contracts, final SortedMap<String, ShiftType> shiftTypes, final SortedMap<String, Skill> skills, final Collection<Requirement> requirements) {
@@ -68,6 +71,14 @@ public class Roster implements Solution<BendableScore> {
         this.requirementsByShiftType = Collections.unmodifiableMap(a);
         this.requirementsBySkill = Collections.unmodifiableMap(b);
         this.requirements = new LinkedHashSet<Requirement>(requirements);
+        // and now create the entities
+        for (final DayOfWeek day : DayOfWeek.values()) {
+            for (final ShiftType type : this.shiftTypes) {
+                for (final Nurse nurse : this.nurses) {
+                    this.shifts.add(new Shift(nurse, type, day));
+                }
+            }
+        }
     }
 
     public Contract getContractById(final String id) {
@@ -119,6 +130,11 @@ public class Roster implements Solution<BendableScore> {
     @Override
     public BendableScore getScore() {
         return this.score;
+    }
+
+    @PlanningEntityCollectionProperty
+    public Collection<Shift> getShifts() {
+        return this.shifts;
     }
 
     public ShiftType getShiftTypeById(final String id) {

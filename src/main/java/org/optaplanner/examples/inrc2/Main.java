@@ -89,7 +89,9 @@ public class Main {
             FileUtils.copyFile(scenario, new File(plannerTempFolder, Inrc2SolutionFileIO.SCENARIO_FILENAME));
             FileUtils.copyFile(history, new File(plannerTempFolder, Inrc2SolutionFileIO.HISTORY_FILENAME));
             FileUtils.copyFile(week, new File(plannerTempFolder, Inrc2SolutionFileIO.WEEK_DATA_FILENAME));
-            FileUtils.copyFile(customInput, new File(plannerTempFolder, Inrc2SolutionFileIO.CUSTOM_INPUT_FILENAME));
+            if (customInput != null && customInput.exists()) {
+                FileUtils.copyFile(customInput, new File(plannerTempFolder, Inrc2SolutionFileIO.CUSTOM_INPUT_FILENAME));
+            }
         } catch (final IOException e) {
             throw new IllegalStateException("Failed preparing environment for the solver.", e);
         }
@@ -109,7 +111,9 @@ public class Main {
         fileIo.write(bestSolution, tempSolutionFile);
         try {
             FileUtils.copyFile(tempSolutionFile, solution);
-            FileUtils.copyFile(new File(plannerTempFolder, Inrc2SolutionFileIO.CUSTOM_OUTPUT_FILENAME), customOutput);
+            if (customOutput != null && customOutput.exists()) {
+                FileUtils.copyFile(new File(plannerTempFolder, Inrc2SolutionFileIO.CUSTOM_OUTPUT_FILENAME), customOutput);
+            }
         } catch (final IOException e) {
             throw new IllegalStateException("Failed storing result of the solver.", e);
         }

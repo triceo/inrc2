@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<solver>
+  <environmentMode>REPRODUCIBLE</environmentMode>
+  <solutionClass>org.optaplanner.examples.inrc2.domain.Roster</solutionClass>
+  <entityClass>org.optaplanner.examples.inrc2.domain.Shift</entityClass>
+
+  <scoreDirectorFactory>
+    <initializingScoreTrend>ONLY_DOWN</initializingScoreTrend>
+    <scoreDefinitionType>BENDABLE</scoreDefinitionType>
+    <bendableHardLevelsSize>2</bendableHardLevelsSize>
+    <bendableSoftLevelsSize>3</bendableSoftLevelsSize>
+    <incrementalScoreCalculatorClass>org.optaplanner.examples.inrc2.solver.score.Inrc2IncrementalScoreCalculator</incrementalScoreCalculatorClass>
+  </scoreDirectorFactory>
+  <termination>
+    <minutesSpentLimit>5</minutesSpentLimit>
+  </termination>
+  
+  <constructionHeuristic>
+    <constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType>
+  </constructionHeuristic>
+  <localSearch>
+    <unionMoveSelector>
+      <changeMoveSelector />
+      <swapMoveSelector />
+    </unionMoveSelector>
+    <acceptor>
+      <lateAcceptanceSize>400</lateAcceptanceSize>
+      <entityTabuRatio>0.3</entityTabuRatio>
+    </acceptor>
+    <forager>
+      <acceptedCountLimit>2</acceptedCountLimit>
+    </forager>
+  </localSearch>
+</solver>
