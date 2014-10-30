@@ -104,7 +104,7 @@ public class Requirement {
         return this.getMinimal(2);
     }
 
-    public int getWednesOptimal() {
+    public int getWednesdayOptimal() {
         return this.getOptimal(2);
     }
 
