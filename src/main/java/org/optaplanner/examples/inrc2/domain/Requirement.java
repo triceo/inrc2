@@ -20,52 +20,28 @@ public class Requirement {
         }
         this.shiftType = shiftType;
         this.skill = skill;
-        this.minimalRequirement[0] = monday.getFirst();
-        this.minimalRequirement[1] = tuesday.getFirst();
-        this.minimalRequirement[2] = wednesday.getFirst();
-        this.minimalRequirement[3] = thursday.getFirst();
-        this.minimalRequirement[4] = friday.getFirst();
-        this.minimalRequirement[5] = saturday.getFirst();
-        this.minimalRequirement[6] = sunday.getFirst();
-        this.optimalRequirement[0] = monday.getSecond();
-        this.optimalRequirement[1] = tuesday.getSecond();
-        this.optimalRequirement[2] = wednesday.getSecond();
-        this.optimalRequirement[3] = thursday.getSecond();
-        this.optimalRequirement[4] = friday.getSecond();
-        this.optimalRequirement[5] = saturday.getSecond();
-        this.optimalRequirement[6] = sunday.getSecond();
+        this.minimalRequirement[DayOfWeek.MONDAY.getNumber()] = monday.getFirst();
+        this.minimalRequirement[DayOfWeek.TUESDAY.getNumber()] = tuesday.getFirst();
+        this.minimalRequirement[DayOfWeek.WEDNESDAY.getNumber()] = wednesday.getFirst();
+        this.minimalRequirement[DayOfWeek.THURSDAY.getNumber()] = thursday.getFirst();
+        this.minimalRequirement[DayOfWeek.FRIDAY.getNumber()] = friday.getFirst();
+        this.minimalRequirement[DayOfWeek.SATURDAY.getNumber()] = saturday.getFirst();
+        this.minimalRequirement[DayOfWeek.SUNDAY.getNumber()] = sunday.getFirst();
+        this.optimalRequirement[DayOfWeek.MONDAY.getNumber()] = monday.getSecond();
+        this.optimalRequirement[DayOfWeek.TUESDAY.getNumber()] = tuesday.getSecond();
+        this.optimalRequirement[DayOfWeek.WEDNESDAY.getNumber()] = wednesday.getSecond();
+        this.optimalRequirement[DayOfWeek.THURSDAY.getNumber()] = thursday.getSecond();
+        this.optimalRequirement[DayOfWeek.FRIDAY.getNumber()] = friday.getSecond();
+        this.optimalRequirement[DayOfWeek.SATURDAY.getNumber()] = saturday.getSecond();
+        this.optimalRequirement[DayOfWeek.FRIDAY.getNumber()] = sunday.getSecond();
     }
 
-    public int getFridayMinimal() {
-        return this.getMinimal(4);
+    public int getMinimal(final DayOfWeek d) {
+        return this.minimalRequirement[d.getNumber()];
     }
 
-    public int getFridayOptimal() {
-        return this.getOptimal(4);
-    }
-
-    private int getMinimal(final int i) {
-        return this.minimalRequirement[i];
-    }
-
-    public int getMondayMinimal() {
-        return this.getMinimal(0);
-    }
-
-    public int getMondayOptimal() {
-        return this.getOptimal(0);
-    }
-
-    private int getOptimal(final int i) {
-        return this.optimalRequirement[i];
-    }
-
-    public int getSaturdayMinimal() {
-        return this.getMinimal(5);
-    }
-
-    public int getSaturdayOptimal() {
-        return this.getOptimal(5);
+    public int getOptimal(final DayOfWeek d) {
+        return this.optimalRequirement[d.getNumber()];
     }
 
     public ShiftType getShiftType() {
@@ -74,38 +50,6 @@ public class Requirement {
 
     public Skill getSkill() {
         return this.skill;
-    }
-
-    public int getSundayMinimal() {
-        return this.getMinimal(6);
-    }
-
-    public int getSundayOptimal() {
-        return this.getOptimal(6);
-    }
-
-    public int getThursdayMinimal() {
-        return this.getMinimal(3);
-    }
-
-    public int getThursdayOptimal() {
-        return this.getOptimal(3);
-    }
-
-    public int getTuesdayMinimal() {
-        return this.getMinimal(1);
-    }
-
-    public int getTuesdayOptimal() {
-        return this.getOptimal(1);
-    }
-
-    public int getWednesdayMinimal() {
-        return this.getMinimal(2);
-    }
-
-    public int getWednesdayOptimal() {
-        return this.getOptimal(2);
     }
 
     @Override
