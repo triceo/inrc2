@@ -36,10 +36,16 @@ public class ShiftType {
     }
 
     public boolean isAllowedAfter(final ShiftType type) {
+        if (type == null) { // null = no previous shift
+            return true;
+        }
         return type.isAllowedBefore(this);
     }
 
     public boolean isAllowedBefore(final ShiftType type) {
+        if (type == null) { // null = no next shift
+            return true;
+        }
         return !this.forbiddenSuccessions.contains(type);
     }
 

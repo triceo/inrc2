@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <solver>
-  <environmentMode>REPRODUCIBLE</environmentMode>
+  <environmentMode>FULL_ASSERT</environmentMode>
   <solutionClass>org.optaplanner.examples.inrc2.domain.Roster</solutionClass>
   <entityClass>org.optaplanner.examples.inrc2.domain.Shift</entityClass>
 

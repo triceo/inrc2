@@ -6,6 +6,7 @@ import org.optaplanner.core.api.domain.entity.PlanningEntity;
 import org.optaplanner.core.api.domain.valuerange.ValueRangeProvider;
 import org.optaplanner.core.api.domain.variable.PlanningVariable;
 
+// one nurse at most 1 shift a day; hard-codes the H1 hard constraint
 @PlanningEntity(difficultyComparatorClass = NurseDifficultyComparator.class)
 public class Shift {
 
