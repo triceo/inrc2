@@ -3,6 +3,7 @@ package org.optaplanner.examples.inrc2.solver.score;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.optaplanner.examples.inrc2.domain.Contract;
 import org.optaplanner.examples.inrc2.domain.DayOfWeek;
 import org.optaplanner.examples.inrc2.domain.Nurse;
 import org.optaplanner.examples.inrc2.domain.Roster;
@@ -33,18 +34,25 @@ public class NurseTracker {
 
         private int incompleteWeekendPenalty = 0;
 
+        private final int maxAllowedAssignments;
         private final int maxAllowedWorkingWeekends;
+        private final int minAllowedAssignments;
 
         private final boolean requiresCompleteWeekend;
         private int successionPenalty = 0;
         // +2 as 0 is previous and 8 prevents AIOUB
         private final ShiftType[] successions = new ShiftType[DayOfWeek.values().length + 2];
+        private int totalAssignments = 0;
         private int totalWorkingWeekends = 0;
 
         public SuccessionTracker(final Nurse n) {
             this.successions[0] = n.getPreviousAssignedShiftType();
-            this.requiresCompleteWeekend = n.getContract().isCompleteWeekends();
-            this.maxAllowedWorkingWeekends = n.getContract().getMaxWorkingWeekends();
+            final Contract c = n.getContract();
+            this.requiresCompleteWeekend = c.isCompleteWeekends();
+            this.minAllowedAssignments = c.getMinAssignments();
+            this.maxAllowedAssignments = c.getMaxAssignments();
+            this.maxAllowedWorkingWeekends = c.getMaxWorkingWeekends();
+            this.totalAssignments = n.getNumPreviousAssignments();
             this.totalWorkingWeekends = n.getNumPreviousWorkingWeekends();
         }
 
@@ -57,6 +65,9 @@ public class NurseTracker {
             final ShiftType nextShiftType = this.successions[dayIndex + 1];
             this.successions[dayIndex] = currentShiftType;
             this.successionPenalty += SuccessionTracker.calculateSuccessionPenalty(previousShiftType, currentShiftType, nextShiftType);
+            if (currentShiftType != null) {
+                this.totalAssignments += 1;
+            }
             final boolean nowCompleteWeekend = this.hasCompletedWeekend();
             if (previouslyCompleteWeekend && !nowCompleteWeekend) {
                 this.incompleteWeekendPenalty += Inrc2IncrementalScoreCalculator.COMPLETE_WEEKENDS_WEIGHT;
@@ -77,6 +88,20 @@ public class NurseTracker {
 
         public int getSuccessionPenalty() {
             return this.successionPenalty;
+        }
+
+        public int getTotalAssignmentsPenalty() {
+            if (this.totalAssignments > this.maxAllowedAssignments) {
+                return (this.totalAssignments - this.maxAllowedAssignments) * Inrc2IncrementalScoreCalculator.TOTAL_ASSIGNMENTS_WEIGHT;
+            } else if (this.minAllowedAssignments > this.totalAssignments) {
+                /*
+                 *  as the assignments increase towards the minimum allowed, this penalty will have a decreasing 
+                 *  tendency; therefore we need to invert it on this inteval.
+                 */
+                return -(this.minAllowedAssignments - this.totalAssignments) * Inrc2IncrementalScoreCalculator.TOTAL_ASSIGNMENTS_WEIGHT;
+            } else {
+                return 0;
+            }
         }
 
         public int getTotalWorkingWeekendsPenalty() {
@@ -113,6 +138,11 @@ public class NurseTracker {
             final ShiftType nextShiftType = this.successions[dayIndex + 1];
             this.successions[dayIndex] = currentShiftType;
             this.successionPenalty += SuccessionTracker.calculateSuccessionPenalty(previousShiftType, currentShiftType, nextShiftType) - SuccessionTracker.calculateSuccessionPenalty(previousShiftType, formerShiftType, nextShiftType);
+            if (currentShiftType == null && formerShiftType != null) {
+                this.totalAssignments -= 1;
+            } else if (currentShiftType != null && formerShiftType == null) {
+                this.totalAssignments += 1;
+            }
             final boolean nowCompleteWeekend = this.hasCompletedWeekend();
             if (previouslyCompleteWeekend && !nowCompleteWeekend) {
                 this.incompleteWeekendPenalty += Inrc2IncrementalScoreCalculator.COMPLETE_WEEKENDS_WEIGHT;
@@ -136,6 +166,9 @@ public class NurseTracker {
             final ShiftType nextShiftType = this.successions[dayIndex + 1];
             this.successions[dayIndex] = null;
             this.successionPenalty -= SuccessionTracker.calculateSuccessionPenalty(previousShiftType, currentShiftType, nextShiftType);
+            if (currentShiftType != null) {
+                this.totalAssignments -= 1;
+            }
             final boolean nowCompleteWeekend = this.hasCompletedWeekend();
             if (previouslyCompleteWeekend && !nowCompleteWeekend) {
                 this.incompleteWeekendPenalty += Inrc2IncrementalScoreCalculator.COMPLETE_WEEKENDS_WEIGHT;
@@ -157,6 +190,7 @@ public class NurseTracker {
 
     private int preferencePenalty = 0;
     private int successionPenalty = 0;
+    private int totalAssignmentsPenalty = 0;
     private int totalWorkingWeekendsPenalty = 0;
 
     public NurseTracker(final Roster r) {
@@ -172,7 +206,9 @@ public class NurseTracker {
         this.successionPenalty -= t.getSuccessionPenalty();
         this.incompleteWeekendsPenalty -= t.getIncompleteWeekendPenalty();
         this.totalWorkingWeekendsPenalty -= t.getTotalWorkingWeekendsPenalty();
+        this.totalAssignmentsPenalty -= t.getTotalAssignmentsPenalty();
         t.add(shift);
+        this.totalAssignmentsPenalty += t.getTotalAssignmentsPenalty();
         this.totalWorkingWeekendsPenalty += t.getTotalWorkingWeekendsPenalty();
         this.incompleteWeekendsPenalty += t.getIncompleteWeekendPenalty();
         this.successionPenalty += t.getSuccessionPenalty();
@@ -203,6 +239,10 @@ public class NurseTracker {
         return this.successionPenalty;
     }
 
+    public int getTotalAssignmentsPenalty() {
+        return this.totalAssignmentsPenalty;
+    }
+
     public int getTotalWorkingWeekendsPenalty() {
         return this.totalWorkingWeekendsPenalty;
     }
@@ -215,7 +255,9 @@ public class NurseTracker {
         this.successionPenalty -= t.getSuccessionPenalty();
         this.incompleteWeekendsPenalty -= t.getIncompleteWeekendPenalty();
         this.totalWorkingWeekendsPenalty -= t.getTotalWorkingWeekendsPenalty();
+        this.totalAssignmentsPenalty -= t.getTotalAssignmentsPenalty();
         t.changeShiftType(shift, previous);
+        this.totalAssignmentsPenalty += t.getTotalAssignmentsPenalty();
         this.totalWorkingWeekendsPenalty += t.getTotalWorkingWeekendsPenalty();
         this.incompleteWeekendsPenalty += t.getIncompleteWeekendPenalty();
         this.successionPenalty += t.getSuccessionPenalty();
@@ -252,7 +294,9 @@ public class NurseTracker {
         this.successionPenalty -= t.getSuccessionPenalty();
         this.incompleteWeekendsPenalty -= t.getIncompleteWeekendPenalty();
         this.totalWorkingWeekendsPenalty -= t.getTotalWorkingWeekendsPenalty();
+        this.totalAssignmentsPenalty -= t.getTotalAssignmentsPenalty();
         t.remove(shift);
+        this.totalAssignmentsPenalty += t.getTotalAssignmentsPenalty();
         this.totalWorkingWeekendsPenalty += t.getTotalWorkingWeekendsPenalty();
         this.incompleteWeekendsPenalty += t.getIncompleteWeekendPenalty();
         this.successionPenalty += t.getSuccessionPenalty();
