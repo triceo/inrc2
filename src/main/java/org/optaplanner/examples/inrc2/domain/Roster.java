@@ -31,6 +31,7 @@ public class Roster implements Solution<BendableScore> {
 
     private SortedMap<String, Nurse> nursesById;
 
+    private Set<Nurse> nursesRequiringCompleteWeekends;
     private Set<Requirement> requirements;
 
     private Map<ShiftType, Requirement> requirementsByShiftType;
@@ -78,6 +79,15 @@ public class Roster implements Solution<BendableScore> {
                 this.shifts.add(new Shift(nurse, day));
             }
         }
+        // now assemble nurses who require complete weekends
+        final Set<Nurse> c = new LinkedHashSet<Nurse>();
+        for (final Nurse n : this.nurses) {
+            if (!n.getContract().isCompleteWeekends()) {
+                continue;
+            }
+            c.add(n);
+        }
+        this.nursesRequiringCompleteWeekends = Collections.unmodifiableSet(c);
     }
 
     public Contract getContractById(final String id) {
@@ -106,6 +116,10 @@ public class Roster implements Solution<BendableScore> {
 
     public Set<Nurse> getNurses() {
         return this.nurses;
+    }
+
+    public Set<Nurse> getNursesRequiringCompleteWeekends() {
+        return this.nursesRequiringCompleteWeekends;
     }
 
     @Override
@@ -151,6 +165,10 @@ public class Roster implements Solution<BendableScore> {
 
     public Set<Skill> getSkills() {
         return this.skills;
+    }
+
+    public void setNursesRequiringCompleteWeekends(final Set<Nurse> nursesRequiringCompleteWeekends) {
+        this.nursesRequiringCompleteWeekends = nursesRequiringCompleteWeekends;
     }
 
     @Override

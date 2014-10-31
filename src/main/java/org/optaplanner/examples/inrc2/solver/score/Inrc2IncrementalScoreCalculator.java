@@ -10,6 +10,7 @@ import org.optaplanner.examples.inrc2.domain.Skill;
 public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculator<Roster> {
 
     public static final int PREFERENCE_WEIGHT = 10;
+    public static final int COMPLETE_WEEKENDS_WEIGHT = 30;
     
     private NurseTracker nurseTracker;
     private ShiftType previousShiftType;
@@ -76,7 +77,7 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
     @Override
     public BendableScore calculateScore() {
         int hard = -this.nurseTracker.getSuccessionPenalty();
-        int soft = -this.nurseTracker.getPreferencePenalty();
+        int soft = -(this.nurseTracker.getPreferencePenalty() + this.nurseTracker.getIncompleteWeekendsPenalty());
         return BendableScore.valueOf(new int[]{hard, 0}, new int[]{soft, 0, 0});
     }
 
@@ -110,7 +111,7 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
 
     @Override
     public void resetWorkingSolution(final Roster workingSolution) {
-        this.nurseTracker = new NurseTracker(workingSolution.getNurses().size());
+        this.nurseTracker = new NurseTracker(workingSolution);
         for (final Shift shift : workingSolution.getShifts()) {
             this.addShift(shift);
         }
