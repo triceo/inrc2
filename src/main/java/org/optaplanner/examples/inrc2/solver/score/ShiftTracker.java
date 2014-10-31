@@ -30,6 +30,10 @@ class ShiftTracker {
         return Math.max(0, this.requirements.get(skill).getMinimal(this.day) - this.forSkill(skill).size());
     }
 
+    public int countNursesMissingFromOptimal(final Skill skill) {
+        return Math.max(0, this.requirements.get(skill).getOptimal(this.day) - this.forSkill(skill).size());
+    }
+
     private Collection<Nurse> forSkill(final Skill s) {
         Collection<Nurse> result = this.nurses.get(s);
         if (result == null) {

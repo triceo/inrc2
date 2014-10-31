@@ -12,7 +12,7 @@ import org.optaplanner.examples.inrc2.domain.Skill;
 public class StaffingTracker {
 
     private int nursesMissingFromMinimal;
-
+    private int nursesMissingFromOptimal;
     private final Roster roster;
 
     private final Map<ShiftType, ShiftTracker[]> shifts = new LinkedHashMap<ShiftType, ShiftTracker[]>();
@@ -20,6 +20,7 @@ public class StaffingTracker {
     public StaffingTracker(final Roster r) {
         this.roster = r;
         this.nursesMissingFromMinimal = r.getTotalMinimalRequirements();
+        this.nursesMissingFromMinimal = r.getTotalOptimalRequirements();
     }
 
     public void add(final Shift shift) {
@@ -29,13 +30,20 @@ public class StaffingTracker {
         }
         final ShiftTracker t = this.forShift(shift);
         final int previousMissing = t.countNursesMissingFromMinimal(skill);
+        final int previousOptimal = t.countNursesMissingFromOptimal(skill);
         t.add(shift);
         final int nowMissing = t.countNursesMissingFromMinimal(skill);
+        final int nowOptimal = t.countNursesMissingFromOptimal(skill);
         this.updateMinimalMissingCounts(previousMissing, nowMissing);
+        this.updateOptimalMissingCounts(previousOptimal, nowOptimal);
     }
 
     public int countNursesMissingFromMinimal() {
         return this.nursesMissingFromMinimal;
+    }
+
+    public int countNursesMissingFromOptimal() {
+        return this.nursesMissingFromOptimal;
     }
 
     private ShiftTracker forShift(final Shift s) {
@@ -65,15 +73,21 @@ public class StaffingTracker {
         // remove nurse from old shift
         final ShiftTracker prev = this.forShift(previous, shift.getDay());
         final int previousMissing1 = prev.countNursesMissingFromMinimal(skill);
+        final int previousOptimal1 = prev.countNursesMissingFromOptimal(skill);
         prev.remove(shift);
         final int nowMissing1 = prev.countNursesMissingFromMinimal(skill);
+        final int nowOptimal1 = prev.countNursesMissingFromOptimal(skill);
         this.updateMinimalMissingCounts(previousMissing1, nowMissing1);
+        this.updateOptimalMissingCounts(previousOptimal1, nowOptimal1);
         // add them to new shift
         final ShiftTracker current = this.forShift(shift);
         final int previousMissing2 = current.countNursesMissingFromMinimal(skill);
+        final int previousOptimal2 = current.countNursesMissingFromOptimal(skill);
         current.add(shift);
         final int nowMissing2 = current.countNursesMissingFromMinimal(skill);
+        final int nowOptimal2 = current.countNursesMissingFromOptimal(skill);
         this.updateMinimalMissingCounts(previousMissing2, nowMissing2);
+        this.updateOptimalMissingCounts(previousOptimal2, nowOptimal2);
     }
 
     /**
@@ -90,11 +104,17 @@ public class StaffingTracker {
         final ShiftTracker t = this.forShift(shift);
         final int previousMissingCurrent = t.countNursesMissingFromMinimal(skill);
         final int previousMissingPrevious = t.countNursesMissingFromMinimal(previous);
+        final int previousOptimalCurrent = t.countNursesMissingFromOptimal(skill);
+        final int previousOptimalPrevious = t.countNursesMissingFromOptimal(previous);
         t.changeSkill(shift, previous);
         final int nowMissingPrevious = t.countNursesMissingFromMinimal(previous);
         final int nowMissingCurrent = t.countNursesMissingFromMinimal(skill);
+        final int nowOptimalPrevious = t.countNursesMissingFromOptimal(previous);
+        final int nowOptimalCurrent = t.countNursesMissingFromOptimal(skill);
         this.updateMinimalMissingCounts(previousMissingPrevious, nowMissingPrevious);
         this.updateMinimalMissingCounts(previousMissingCurrent, nowMissingCurrent);
+        this.updateOptimalMissingCounts(previousOptimalPrevious, nowOptimalPrevious);
+        this.updateOptimalMissingCounts(previousOptimalCurrent, nowOptimalCurrent);
     }
 
     /**
@@ -116,9 +136,12 @@ public class StaffingTracker {
     public void remove(final Shift shift, final Skill skill) {
         final ShiftTracker t = this.forShift(shift);
         final int previousMissing = t.countNursesMissingFromMinimal(skill);
+        final int previousOptimal = t.countNursesMissingFromOptimal(skill);
         t.remove(skill, shift.getNurse());
         final int nowMissing = t.countNursesMissingFromMinimal(skill);
+        final int nowOptimal = t.countNursesMissingFromOptimal(skill);
         this.updateMinimalMissingCounts(previousMissing, nowMissing);
+        this.updateOptimalMissingCounts(previousOptimal, nowOptimal);
     }
 
     private void updateMinimalMissingCounts(final int previous, final int now) {
@@ -129,4 +152,11 @@ public class StaffingTracker {
         }
     }
 
+    private void updateOptimalMissingCounts(final int previous, final int now) {
+        if (previous > now) {
+            this.nursesMissingFromOptimal -= 1;
+        } else if (previous < now) {
+            this.nursesMissingFromOptimal += 1;
+        }
+    }
 }
