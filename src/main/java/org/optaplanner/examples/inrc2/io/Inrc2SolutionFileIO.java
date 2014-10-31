@@ -1,11 +1,17 @@
 package org.optaplanner.examples.inrc2.io;
 
 import java.io.File;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.SortedMap;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.math3.util.Pair;
 import org.optaplanner.core.api.domain.solution.Solution;
+import org.optaplanner.examples.inrc2.domain.Roster;
+import org.optaplanner.examples.inrc2.domain.Shift;
 import org.optaplanner.persistence.common.api.domain.solution.SolutionFileIO;
 
 public class Inrc2SolutionFileIO implements SolutionFileIO {
@@ -43,8 +49,26 @@ public class Inrc2SolutionFileIO implements SolutionFileIO {
 
     @Override
     public void write(final Solution arg0, final File arg1) {
-        // TODO Auto-generated method stub
-
+        final Roster r = (Roster) arg0;
+        final List<String> lines = new LinkedList<String>();
+        lines.add("SOLUTION");
+        lines.add(r.getCurrentWeekNum() + " " + r.getId());
+        final Set<Shift> assignedShifts = new LinkedHashSet<Shift>();
+        for (final Shift s : r.getShifts()) {
+            if (s.getSkill() == null) {
+                continue;
+            }
+            assignedShifts.add(s);
+        }
+        lines.add("ASSIGNMENTS = " + assignedShifts.size());
+        for (final Shift s : assignedShifts) {
+            lines.add(s.getNurse().getId() + " " + s.getDay().getAbbreviation() + " " + s.getShiftType().getId() + " " + s.getSkill().getId());
+        }
+        try {
+            FileUtils.writeLines(arg1, lines);
+        } catch (final Exception ex) {
+            throw new IllegalStateException("Failed writing solution.", ex);
+        }
     }
 
 }
