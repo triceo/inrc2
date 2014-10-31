@@ -9,6 +9,8 @@ import org.optaplanner.examples.inrc2.domain.Skill;
 
 public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculator<Roster> {
 
+    public static final int PREFERENCE_WEIGHT = 10;
+    
     private NurseTracker nurseTracker;
     private ShiftType previousShiftType;
 
@@ -74,7 +76,8 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
     @Override
     public BendableScore calculateScore() {
         int hard = -this.nurseTracker.getSuccessionPenalty();
-        return BendableScore.valueOf(new int[]{hard, 0}, new int[]{0, 0, 0});
+        int soft = -this.nurseTracker.getPreferencePenalty();
+        return BendableScore.valueOf(new int[]{hard, 0}, new int[]{soft, 0, 0});
     }
 
     private void onShiftTypeSet(final Shift entity) {

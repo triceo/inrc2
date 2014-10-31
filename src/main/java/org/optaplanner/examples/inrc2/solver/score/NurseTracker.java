@@ -74,6 +74,7 @@ public class NurseTracker {
 
     private final Map<Nurse, SuccessionTracker> nurses = new HashMap<Nurse, SuccessionTracker>();
 
+    private int preferencePenalty = 0;
     private int successionPenalty = 0;
 
     public NurseTracker(final int nurseCount) {
@@ -85,6 +86,10 @@ public class NurseTracker {
         this.successionPenalty -= t.getSuccessionPenalty();
         t.add(shift);
         this.successionPenalty += t.getSuccessionPenalty();
+        // determine preference penalty
+        if (shift.getShiftType() != null && !shift.isDesired()) {
+            this.preferencePenalty += Inrc2IncrementalScoreCalculator.PREFERENCE_WEIGHT;
+        }
     }
 
     private SuccessionTracker forNurse(final Nurse n) {
@@ -96,6 +101,10 @@ public class NurseTracker {
         return pnt;
     }
 
+    public int getPreferencePenalty() {
+        return this.preferencePenalty;
+    }
+
     public int getSuccessionPenalty() {
         return this.successionPenalty;
     }
@@ -105,6 +114,13 @@ public class NurseTracker {
         this.successionPenalty -= t.getSuccessionPenalty();
         t.changeShiftType(shift, previous);
         this.successionPenalty += t.getSuccessionPenalty();
+        // determine preference penalty
+        if (previous != null && !shift.isDesired(previous)) {
+            this.preferencePenalty -= Inrc2IncrementalScoreCalculator.PREFERENCE_WEIGHT;
+        }
+        if (shift.getShiftType() != null && !shift.isDesired()) {
+            this.preferencePenalty += Inrc2IncrementalScoreCalculator.PREFERENCE_WEIGHT;
+        }
     }
 
     public void remove(final Shift shift) {
@@ -112,6 +128,10 @@ public class NurseTracker {
         this.successionPenalty -= t.getSuccessionPenalty();
         t.remove(shift);
         this.successionPenalty += t.getSuccessionPenalty();
+        // determine preference penalty
+        if (shift.getShiftType() != null && !shift.isDesired()) {
+            this.preferencePenalty -= Inrc2IncrementalScoreCalculator.PREFERENCE_WEIGHT;
+        }
     }
 
 }

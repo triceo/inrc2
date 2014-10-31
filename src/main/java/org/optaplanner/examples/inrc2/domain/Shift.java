@@ -34,6 +34,17 @@ public class Shift {
     public Nurse getNurse() {
         return this.nurse;
     }
+    
+    public boolean isDesired() {
+        return this.isDesired(this.getShiftType());
+    }
+
+    public boolean isDesired(ShiftType shiftType) {
+        if (shiftType == null) {
+            throw new IllegalStateException("Null shift type. Cannot tell whether desired or not.");
+        }
+        return !getNurse().shiftOffRequested(day, shiftType);
+    }
 
     @ValueRangeProvider(id = "nurseSkills")
     public Collection<Skill> getNurseSkills() {
