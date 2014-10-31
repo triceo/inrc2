@@ -64,9 +64,9 @@ final class SuccessionTracker {
         }
         final boolean nowCompleteWeekend = this.hasCompletedWeekend();
         if (previouslyCompleteWeekend && !nowCompleteWeekend) {
-            this.incompleteWeekendPenalty += Inrc2IncrementalScoreCalculator.COMPLETE_WEEKENDS_WEIGHT;
+            this.incompleteWeekendPenalty += 1;
         } else if (!previouslyCompleteWeekend && nowCompleteWeekend) {
-            this.incompleteWeekendPenalty -= Inrc2IncrementalScoreCalculator.COMPLETE_WEEKENDS_WEIGHT;
+            this.incompleteWeekendPenalty -= 1;
         }
         final boolean nowWorkingWeekend = this.hasWorkingWeekend();
         if (previouslyWorkingWeekend && !nowWorkingWeekend) {
@@ -139,9 +139,9 @@ final class SuccessionTracker {
         }
         final boolean nowCompleteWeekend = this.hasCompletedWeekend();
         if (previouslyCompleteWeekend && !nowCompleteWeekend) {
-            this.incompleteWeekendPenalty += Inrc2IncrementalScoreCalculator.COMPLETE_WEEKENDS_WEIGHT;
+            this.incompleteWeekendPenalty += 1;
         } else if (!previouslyCompleteWeekend && nowCompleteWeekend) {
-            this.incompleteWeekendPenalty -= Inrc2IncrementalScoreCalculator.COMPLETE_WEEKENDS_WEIGHT;
+            this.incompleteWeekendPenalty -= 1;
         }
         final boolean nowWorkingWeekend = this.hasWorkingWeekend();
         if (previouslyWorkingWeekend && !nowWorkingWeekend) {
@@ -165,9 +165,9 @@ final class SuccessionTracker {
         }
         final boolean nowCompleteWeekend = this.hasCompletedWeekend();
         if (previouslyCompleteWeekend && !nowCompleteWeekend) {
-            this.incompleteWeekendPenalty += Inrc2IncrementalScoreCalculator.COMPLETE_WEEKENDS_WEIGHT;
+            this.incompleteWeekendPenalty += 1;
         } else if (!previouslyCompleteWeekend && nowCompleteWeekend) {
-            this.incompleteWeekendPenalty -= Inrc2IncrementalScoreCalculator.COMPLETE_WEEKENDS_WEIGHT;
+            this.incompleteWeekendPenalty -= 1;
         }
         final boolean nowWorkingWeekend = this.hasWorkingWeekend();
         if (previouslyWorkingWeekend && !nowWorkingWeekend) {

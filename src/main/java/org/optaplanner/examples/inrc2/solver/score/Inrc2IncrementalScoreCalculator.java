@@ -9,11 +9,11 @@ import org.optaplanner.examples.inrc2.domain.Skill;
 
 public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculator<Roster> {
 
-    public static final int COMPLETE_WEEKENDS_WEIGHT = 30;
-    public static final int PREFERENCE_WEIGHT = 10;
-    public static final int SUBOMPTIMAL_WEIGHT = 30;
-    public static final int TOTAL_ASSIGNMENTS_WEIGHT = 20;
-    public static final int WORKING_WEEKENDS_WEIGHT = 30;
+    private static final int COMPLETE_WEEKENDS_WEIGHT = 30;
+    private static final int PREFERENCE_WEIGHT = 10;
+    private static final int SUBOMPTIMAL_WEIGHT = 30;
+    private static final int TOTAL_ASSIGNMENTS_WEIGHT = 20;
+    private static final int WORKING_WEEKENDS_WEIGHT = 30;
 
     private NurseTracker nurseTracker;
     private ShiftType previousShiftType;
@@ -83,14 +83,14 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
     public BendableScore calculateScore() {
         final int hard = -(this.nurseTracker.getSuccessionPenalty() +
                 this.staffingTracker.countNursesMissingFromMinimal());
-        final int soft = -(this.nurseTracker.getPreferencePenalty() +
-                this.nurseTracker.getIncompleteWeekendsPenalty() +
-                this.nurseTracker.getTotalWorkingWeekendsPenalty() +
-                this.nurseTracker.getTotalAssignmentsPenalty() +
+        final int soft = -(this.nurseTracker.countIgnoredShiftPreferences() * Inrc2IncrementalScoreCalculator.PREFERENCE_WEIGHT +
+                this.nurseTracker.countIncompleteWeekends() * Inrc2IncrementalScoreCalculator.COMPLETE_WEEKENDS_WEIGHT +
+                this.nurseTracker.countTotalWeekdsOutOfBounds() * Inrc2IncrementalScoreCalculator.WORKING_WEEKENDS_WEIGHT +
+                this.nurseTracker.countTotalAssignmentsOutOfBounds() * Inrc2IncrementalScoreCalculator.TOTAL_ASSIGNMENTS_WEIGHT +
                 this.staffingTracker.countNursesMissingFromOptimal() * Inrc2IncrementalScoreCalculator.SUBOMPTIMAL_WEIGHT);
         final int softest = -(this.nurseTracker.countTotalAssignmentsOutOfBounds() +
                 this.nurseTracker.countTotalWeekdsOutOfBounds());
-        return BendableScore.valueOf(new int[] {hard}, new int[] {soft, softest});
+        return BendableScore.valueOf(new int[]{hard}, new int[]{soft, softest});
     }
 
     private void onShiftTypeSet(final Shift entity) {
