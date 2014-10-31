@@ -90,7 +90,7 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
                 this.staffingTracker.countNursesMissingFromOptimal() * Inrc2IncrementalScoreCalculator.SUBOMPTIMAL_WEIGHT);
         final int softest = -(this.nurseTracker.countTotalAssignmentsOutOfBounds() +
                 this.nurseTracker.countTotalWeekdsOutOfBounds());
-        return BendableScore.valueOf(new int[]{hard, 0}, new int[]{soft, softest, 0});
+        return BendableScore.valueOf(new int[] {hard}, new int[] {soft, softest});
     }
 
     private void onShiftTypeSet(final Shift entity) {

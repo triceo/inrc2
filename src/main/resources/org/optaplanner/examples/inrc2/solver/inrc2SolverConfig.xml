@@ -7,8 +7,8 @@
   <scoreDirectorFactory>
     <initializingScoreTrend>ONLY_DOWN</initializingScoreTrend>
     <scoreDefinitionType>BENDABLE</scoreDefinitionType>
-    <bendableHardLevelsSize>2</bendableHardLevelsSize>
-    <bendableSoftLevelsSize>3</bendableSoftLevelsSize>
+    <bendableHardLevelsSize>1</bendableHardLevelsSize>
+    <bendableSoftLevelsSize>2</bendableSoftLevelsSize>
     <incrementalScoreCalculatorClass>org.optaplanner.examples.inrc2.solver.score.Inrc2IncrementalScoreCalculator</incrementalScoreCalculatorClass>
   </scoreDirectorFactory>
   <termination>
