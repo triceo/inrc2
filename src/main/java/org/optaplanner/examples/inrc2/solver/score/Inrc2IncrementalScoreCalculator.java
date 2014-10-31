@@ -95,15 +95,14 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
     }
 
     private void onSkillSet(final Shift entity) {
-
+        this.nurseTracker.add(entity); // nurse has been assigned
     }
 
     private void onSkillUnset(final Shift entity, final Skill previous) {
-
+        this.nurseTracker.remove(entity, true); // nurse has been unassigned
     }
 
     private void onSkillUpdated(final Shift entity, final Skill previous) {
-
     }
 
     private void removeShift(final Shift entity) {

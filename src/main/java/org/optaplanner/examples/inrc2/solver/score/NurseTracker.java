@@ -165,6 +165,9 @@ public class NurseTracker {
     }
 
     public void add(final Shift shift) {
+        if (shift.getSkill() == null) { // nurse is not actually assigned
+            return;
+        }
         final SuccessionTracker t = this.forNurse(shift.getNurse());
         this.successionPenalty -= t.getSuccessionPenalty();
         this.incompleteWeekendsPenalty -= t.getIncompleteWeekendPenalty();
@@ -205,6 +208,9 @@ public class NurseTracker {
     }
 
     public void changeShiftType(final Shift shift, final ShiftType previous) {
+        if (shift.getSkill() == null) { // nurse is not actually assigned
+            return;
+        }
         final SuccessionTracker t = this.forNurse(shift.getNurse());
         this.successionPenalty -= t.getSuccessionPenalty();
         this.incompleteWeekendsPenalty -= t.getIncompleteWeekendPenalty();
@@ -222,7 +228,26 @@ public class NurseTracker {
         }
     }
 
+    /**
+     * Remove a nurse that is assigned to a shift.
+     *
+     */
     public void remove(final Shift shift) {
+        this.remove(shift, false);
+    }
+
+    /**
+     * Remove a nurse.
+     *
+     * @param shift
+     * @param force
+     *            If true, nurse will be removed even when it is not assigned to a shift. This is necessary, as when
+     *            unsetting the skill, it will have already been null at the time of reaching this method.
+     */
+    public void remove(final Shift shift, final boolean force) {
+        if (!force && shift.getSkill() == null) { // nurse is not actually assigned
+            return;
+        }
         final SuccessionTracker t = this.forNurse(shift.getNurse());
         this.successionPenalty -= t.getSuccessionPenalty();
         this.incompleteWeekendsPenalty -= t.getIncompleteWeekendPenalty();
