@@ -59,6 +59,7 @@ public class Roster implements Solution<BendableScore> {
     }
 
     public Roster(final String id, final int totalNumberOfWeeks, final int currentWeekNumber, final SortedMap<String, Nurse> nurses, final SortedMap<String, Contract> contracts, final SortedMap<String, ShiftType> shiftTypes, final SortedMap<String, Skill> skills, final Collection<Requirement> requirements) {
+        this.id = id;
         this.skillsById = Collections.unmodifiableSortedMap(skills);
         this.skills = Collections.unmodifiableSet(new LinkedHashSet<Skill>(skills.values()));
         this.nursesById = Collections.unmodifiableSortedMap(nurses);
