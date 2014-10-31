@@ -82,30 +82,30 @@ public class NurseTracker {
             }
         }
 
+        public int countAssignmentsOutsideBounds() {
+            if (this.totalAssignments > this.maxAllowedAssignments) {
+                return this.totalAssignments - this.maxAllowedAssignments;
+            } else if (this.minAllowedAssignments > this.totalAssignments) {
+                /*
+                 * as the assignments increase towards the minimum allowed, this penalty will have a decreasing
+                 * tendency; therefore we need to invert it on this interval.
+                 */
+                return this.totalAssignments - this.minAllowedAssignments;
+            } else {
+                return 0;
+            }
+        }
+
+        public int countWeekendsOutsideBounds() {
+            return Math.min(0, this.totalWorkingWeekends - this.maxAllowedWorkingWeekends);
+        }
+
         public int getIncompleteWeekendPenalty() {
             return this.incompleteWeekendPenalty;
         }
 
         public int getSuccessionPenalty() {
             return this.successionPenalty;
-        }
-
-        public int getTotalAssignmentsPenalty() {
-            if (this.totalAssignments > this.maxAllowedAssignments) {
-                return (this.totalAssignments - this.maxAllowedAssignments) * Inrc2IncrementalScoreCalculator.TOTAL_ASSIGNMENTS_WEIGHT;
-            } else if (this.minAllowedAssignments > this.totalAssignments) {
-                /*
-                 *  as the assignments increase towards the minimum allowed, this penalty will have a decreasing 
-                 *  tendency; therefore we need to invert it on this inteval.
-                 */
-                return -(this.minAllowedAssignments - this.totalAssignments) * Inrc2IncrementalScoreCalculator.TOTAL_ASSIGNMENTS_WEIGHT;
-            } else {
-                return 0;
-            }
-        }
-
-        public int getTotalWorkingWeekendsPenalty() {
-            return Math.max(0, this.totalWorkingWeekends - this.maxAllowedWorkingWeekends) * Inrc2IncrementalScoreCalculator.WORKING_WEEKENDS_WEIGHT;
         }
 
         private boolean hasCompletedWeekend() {
@@ -186,12 +186,14 @@ public class NurseTracker {
     }
 
     private int incompleteWeekendsPenalty = 0;
+
     private final Map<Nurse, SuccessionTracker> nurses = new HashMap<Nurse, SuccessionTracker>();
 
     private int preferencePenalty = 0;
     private int successionPenalty = 0;
-    private int totalAssignmentsPenalty = 0;
-    private int totalWorkingWeekendsPenalty = 0;
+
+    private int totalAssignmentsOutOfBounds = 0;
+    private int totalWeekedsOverLimit = 0;
 
     public NurseTracker(final Roster r) {
         // by default, all nurses who require complete weekends have incomplete weekends
@@ -205,17 +207,25 @@ public class NurseTracker {
         final SuccessionTracker t = this.forNurse(shift.getNurse());
         this.successionPenalty -= t.getSuccessionPenalty();
         this.incompleteWeekendsPenalty -= t.getIncompleteWeekendPenalty();
-        this.totalWorkingWeekendsPenalty -= t.getTotalWorkingWeekendsPenalty();
-        this.totalAssignmentsPenalty -= t.getTotalAssignmentsPenalty();
+        this.totalAssignmentsOutOfBounds -= t.countAssignmentsOutsideBounds();
+        this.totalWeekedsOverLimit -= t.countWeekendsOutsideBounds();
         t.add(shift);
-        this.totalAssignmentsPenalty += t.getTotalAssignmentsPenalty();
-        this.totalWorkingWeekendsPenalty += t.getTotalWorkingWeekendsPenalty();
+        this.totalWeekedsOverLimit += t.countWeekendsOutsideBounds();
+        this.totalAssignmentsOutOfBounds += t.countAssignmentsOutsideBounds();
         this.incompleteWeekendsPenalty += t.getIncompleteWeekendPenalty();
         this.successionPenalty += t.getSuccessionPenalty();
         // determine preference penalty
         if (shift.getShiftType() != null && !shift.isDesired()) {
             this.preferencePenalty += Inrc2IncrementalScoreCalculator.PREFERENCE_WEIGHT;
         }
+    }
+
+    public int countTotalAssignmentsOutOfBounds() {
+        return this.totalAssignmentsOutOfBounds;
+    }
+
+    public int countTotalWeekdsOutOfBounds() {
+        return this.totalWeekedsOverLimit;
     }
 
     private SuccessionTracker forNurse(final Nurse n) {
@@ -240,11 +250,11 @@ public class NurseTracker {
     }
 
     public int getTotalAssignmentsPenalty() {
-        return this.totalAssignmentsPenalty;
+        return this.countTotalAssignmentsOutOfBounds() * Inrc2IncrementalScoreCalculator.TOTAL_ASSIGNMENTS_WEIGHT;
     }
 
     public int getTotalWorkingWeekendsPenalty() {
-        return this.totalWorkingWeekendsPenalty;
+        return this.countTotalWeekdsOutOfBounds() * Inrc2IncrementalScoreCalculator.WORKING_WEEKENDS_WEIGHT;
     }
 
     public void changeShiftType(final Shift shift, final ShiftType previous) {
@@ -254,11 +264,11 @@ public class NurseTracker {
         final SuccessionTracker t = this.forNurse(shift.getNurse());
         this.successionPenalty -= t.getSuccessionPenalty();
         this.incompleteWeekendsPenalty -= t.getIncompleteWeekendPenalty();
-        this.totalWorkingWeekendsPenalty -= t.getTotalWorkingWeekendsPenalty();
-        this.totalAssignmentsPenalty -= t.getTotalAssignmentsPenalty();
+        this.totalAssignmentsOutOfBounds -= t.countAssignmentsOutsideBounds();
+        this.totalWeekedsOverLimit -= t.countWeekendsOutsideBounds();
         t.changeShiftType(shift, previous);
-        this.totalAssignmentsPenalty += t.getTotalAssignmentsPenalty();
-        this.totalWorkingWeekendsPenalty += t.getTotalWorkingWeekendsPenalty();
+        this.totalWeekedsOverLimit += t.countWeekendsOutsideBounds();
+        this.totalAssignmentsOutOfBounds += t.countAssignmentsOutsideBounds();
         this.incompleteWeekendsPenalty += t.getIncompleteWeekendPenalty();
         this.successionPenalty += t.getSuccessionPenalty();
         // determine preference penalty
@@ -293,11 +303,11 @@ public class NurseTracker {
         final SuccessionTracker t = this.forNurse(shift.getNurse());
         this.successionPenalty -= t.getSuccessionPenalty();
         this.incompleteWeekendsPenalty -= t.getIncompleteWeekendPenalty();
-        this.totalWorkingWeekendsPenalty -= t.getTotalWorkingWeekendsPenalty();
-        this.totalAssignmentsPenalty -= t.getTotalAssignmentsPenalty();
+        this.totalAssignmentsOutOfBounds -= t.countAssignmentsOutsideBounds();
+        this.totalWeekedsOverLimit -= t.countWeekendsOutsideBounds();
         t.remove(shift);
-        this.totalAssignmentsPenalty += t.getTotalAssignmentsPenalty();
-        this.totalWorkingWeekendsPenalty += t.getTotalWorkingWeekendsPenalty();
+        this.totalWeekedsOverLimit += t.countWeekendsOutsideBounds();
+        this.totalAssignmentsOutOfBounds += t.countAssignmentsOutsideBounds();
         this.incompleteWeekendsPenalty += t.getIncompleteWeekendPenalty();
         this.successionPenalty += t.getSuccessionPenalty();
         // determine preference penalty

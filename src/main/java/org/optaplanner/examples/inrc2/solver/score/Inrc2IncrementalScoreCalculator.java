@@ -83,7 +83,9 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
                 this.nurseTracker.getIncompleteWeekendsPenalty() +
                 this.nurseTracker.getTotalWorkingWeekendsPenalty() +
                 this.nurseTracker.getTotalAssignmentsPenalty());
-        return BendableScore.valueOf(new int[]{hard, 0}, new int[]{soft, 0, 0});
+        final int softest = - (this.nurseTracker.countTotalAssignmentsOutOfBounds() + 
+                this.nurseTracker.countTotalWeekdsOutOfBounds());
+        return BendableScore.valueOf(new int[]{hard, 0}, new int[]{soft, softest, 0});
     }
 
     private void onShiftTypeSet(final Shift entity) {
