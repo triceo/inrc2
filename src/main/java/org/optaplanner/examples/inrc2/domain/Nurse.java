@@ -14,7 +14,7 @@ public class Nurse {
     private final String id;
 
     private final int numPreviousAssignments, numPreviousWorkingWeekends, numPreviousConsecutiveAssignments,
-            numPreviousConsecutiveDaysOn, numPreviousConsecutiveDaysOff;
+    numPreviousConsecutiveDaysOn, numPreviousConsecutiveDaysOff;
 
     private final ShiftType previousAssignedShiftType;
 
@@ -94,7 +94,7 @@ public class Nurse {
     @Override
     public String toString() {
         final StringBuilder builder = new StringBuilder();
-        builder.append("Nurse [id=").append(this.id).append(", contract=").append(this.contract).append(", skills=").append(this.skills).append(", requestedShiftsOff=").append(this.requestedShiftsOff).append(", numPreviousAssignments=").append(this.numPreviousAssignments).append(", numPreviousWorkingWeekends=").append(this.numPreviousWorkingWeekends).append(", numPreviousConsecutiveAssignments=").append(this.numPreviousConsecutiveAssignments).append(", numPreviousConsecutiveDaysOn=").append(this.numPreviousConsecutiveDaysOn).append(", numPreviousConsecutiveDaysOff=").append(this.numPreviousConsecutiveDaysOff).append(", previousAssignedShiftType=").append(this.previousAssignedShiftType).append("]");
+        builder.append("Nurse [id=").append(this.id).append("]");
         return builder.toString();
     }
 

@@ -34,17 +34,6 @@ public class Shift {
     public Nurse getNurse() {
         return this.nurse;
     }
-    
-    public boolean isDesired() {
-        return this.isDesired(this.getShiftType());
-    }
-
-    public boolean isDesired(ShiftType shiftType) {
-        if (shiftType == null) {
-            throw new IllegalStateException("Null shift type. Cannot tell whether desired or not.");
-        }
-        return !getNurse().shiftOffRequested(day, shiftType);
-    }
 
     @ValueRangeProvider(id = "nurseSkills")
     public Collection<Skill> getNurseSkills() {
@@ -62,6 +51,17 @@ public class Shift {
     @PlanningVariable(nullable = true, valueRangeProviderRefs = "nurseSkills")
     public Skill getSkill() {
         return this.skill;
+    }
+
+    public boolean isDesired() {
+        return this.isDesired(this.getShiftType());
+    }
+
+    public boolean isDesired(final ShiftType shiftType) {
+        if (shiftType == null) {
+            throw new IllegalStateException("Null shift type. Cannot tell whether desired or not.");
+        }
+        return !this.getNurse().shiftOffRequested(this.day, shiftType);
     }
 
     public void setDay(final DayOfWeek day) {
@@ -83,7 +83,7 @@ public class Shift {
     @Override
     public String toString() {
         final StringBuilder builder = new StringBuilder();
-        builder.append("Shift [day=").append(this.day).append(", shiftType=").append(this.shiftType).append(", nurse=").append(this.nurse).append(", skill=").append(this.skill).append("]");
+        builder.append("Shift [day=").append(this.day).append(", nurse=").append(this.nurse).append(", shiftType=").append(this.shiftType).append(", skill=").append(this.skill).append("]");
         return builder.toString();
     }
 

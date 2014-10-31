@@ -52,7 +52,7 @@ public class ShiftType {
     @Override
     public String toString() {
         final StringBuilder builder = new StringBuilder();
-        builder.append("ShiftType [id=").append(this.id).append(", consecutiveAssignments=<").append(this.minConsecutiveAssignments).append(",").append(this.maxConsecutiveAssignments).append(">, forbiddenSuccessions=").append(this.forbiddenSuccessions).append("]");
+        builder.append("ShiftType [id=").append(this.id).append("]");
         return builder.toString();
     }
 

@@ -70,8 +70,8 @@ public class Contract {
 
     @Override
     public String toString() {
-        final StringBuilder builder = new StringBuilder();
-        builder.append("Contract [id=").append(this.id).append(", completeWeekends=").append(this.completeWeekends).append(", assignments=<").append(this.minAssignments).append(",").append(this.maxAssignments).append(">, consecutiveDaysOff=<").append(this.minConsecutiveDaysOff).append(",").append(this.maxConsecutiveDaysOff).append(">, consecutiveDaysOn=<").append(this.minConsecutiveDaysOn).append(",").append(this.maxConsecutiveDaysOn).append(">, maxWorkingWeekends=").append(this.maxWorkingWeekends).append("]");
+        StringBuilder builder = new StringBuilder();
+        builder.append("Contract [id=").append(id).append("]");
         return builder.toString();
     }
 

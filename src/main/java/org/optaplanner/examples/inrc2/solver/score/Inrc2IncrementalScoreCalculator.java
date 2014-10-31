@@ -16,11 +16,13 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
 
     private NurseTracker nurseTracker;
     private ShiftType previousShiftType;
-
     private Skill previousSkill;
+
+    private StaffingTracker staffingTracker;
 
     private void addShift(final Shift entity) {
         this.nurseTracker.add(entity);
+        this.staffingTracker.add(entity);
     }
 
     @Override
@@ -78,46 +80,55 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
 
     @Override
     public BendableScore calculateScore() {
-        final int hard = -this.nurseTracker.getSuccessionPenalty();
+        final int hard = -(this.nurseTracker.getSuccessionPenalty() +
+                this.staffingTracker.countNursesMissingFromMinimal());
         final int soft = -(this.nurseTracker.getPreferencePenalty() +
                 this.nurseTracker.getIncompleteWeekendsPenalty() +
                 this.nurseTracker.getTotalWorkingWeekendsPenalty() +
                 this.nurseTracker.getTotalAssignmentsPenalty());
-        final int softest = - (this.nurseTracker.countTotalAssignmentsOutOfBounds() + 
+        final int softest = -(this.nurseTracker.countTotalAssignmentsOutOfBounds() +
                 this.nurseTracker.countTotalWeekdsOutOfBounds());
         return BendableScore.valueOf(new int[]{hard, 0}, new int[]{soft, softest, 0});
     }
 
     private void onShiftTypeSet(final Shift entity) {
         this.nurseTracker.changeShiftType(entity, null);
+        this.staffingTracker.changeShiftType(entity, null);
     }
 
     private void onShiftTypeUnset(final Shift entity, final ShiftType previous) {
         this.nurseTracker.changeShiftType(entity, previous);
+        this.staffingTracker.changeShiftType(entity, previous);
     }
 
     private void onShiftTypeUpdated(final Shift entity, final ShiftType previous) {
         this.nurseTracker.changeShiftType(entity, previous);
+        this.staffingTracker.changeShiftType(entity, previous);
     }
 
     private void onSkillSet(final Shift entity) {
         this.nurseTracker.add(entity); // nurse has been assigned
+        this.staffingTracker.add(entity);
     }
 
     private void onSkillUnset(final Shift entity, final Skill previous) {
         this.nurseTracker.remove(entity, true); // nurse has been unassigned
+        this.staffingTracker.remove(entity, previous);
     }
 
     private void onSkillUpdated(final Shift entity, final Skill previous) {
+        this.staffingTracker.changeSkill(entity, previous);
     }
 
     private void removeShift(final Shift entity) {
         this.nurseTracker.remove(entity);
+        this.staffingTracker.remove(entity);
     }
 
     @Override
     public void resetWorkingSolution(final Roster workingSolution) {
         this.nurseTracker = new NurseTracker(workingSolution);
+        this.staffingTracker = new StaffingTracker(workingSolution);
         for (final Shift shift : workingSolution.getShifts()) {
             this.addShift(shift);
         }

@@ -2,6 +2,7 @@ package org.optaplanner.examples.inrc2.domain;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -32,11 +33,10 @@ public class Roster implements Solution<BendableScore> {
     private SortedMap<String, Nurse> nursesById;
 
     private Set<Nurse> nursesRequiringCompleteWeekends;
+
     private Set<Requirement> requirements;
 
-    private Map<ShiftType, Requirement> requirementsByShiftType;
-
-    private Map<Skill, Requirement> requirementsBySkill;
+    private Map<ShiftType, Map<Skill, Requirement>> requirementsByShiftTypeAndSkill;
 
     private BendableScore score;
 
@@ -51,6 +51,9 @@ public class Roster implements Solution<BendableScore> {
     // iterating over .values() is slower and memory is cheap; just copy the collections
     private SortedMap<String, Skill> skillsById;
 
+    private int totalMinimalRequirements = 0;
+    private int totalOptimalRequirements = 0;
+
     protected Roster() {
         // planner cloning prevents immutability
     }
@@ -64,14 +67,15 @@ public class Roster implements Solution<BendableScore> {
         this.contracts = Collections.unmodifiableSet(new LinkedHashSet<Contract>(contracts.values()));
         this.shiftTypesById = Collections.unmodifiableSortedMap(shiftTypes);
         this.shiftTypes = Collections.unmodifiableSet(new LinkedHashSet<ShiftType>(shiftTypes.values()));
-        final Map<ShiftType, Requirement> a = new LinkedHashMap<ShiftType, Requirement>();
-        final Map<Skill, Requirement> b = new LinkedHashMap<Skill, Requirement>();
+        final Map<ShiftType, Map<Skill, Requirement>> a = new LinkedHashMap<ShiftType, Map<Skill, Requirement>>();
         for (final Requirement requirement : requirements) {
-            a.put(requirement.getShiftType(), requirement);
-            b.put(requirement.getSkill(), requirement);
+            final ShiftType st = requirement.getShiftType();
+            if (!a.containsKey(st)) {
+                a.put(st, new HashMap<Skill, Requirement>());
+            }
+            a.get(st).put(requirement.getSkill(), requirement);
         }
-        this.requirementsByShiftType = Collections.unmodifiableMap(a);
-        this.requirementsBySkill = Collections.unmodifiableMap(b);
+        this.requirementsByShiftTypeAndSkill = Collections.unmodifiableMap(a);
         this.requirements = new LinkedHashSet<Requirement>(requirements);
         // and now create the entities
         for (final DayOfWeek day : DayOfWeek.values()) {
@@ -88,6 +92,13 @@ public class Roster implements Solution<BendableScore> {
             c.add(n);
         }
         this.nursesRequiringCompleteWeekends = Collections.unmodifiableSet(c);
+        // sum up requirements to know how many at most we need
+        for (final Requirement r : this.requirements) {
+            for (final DayOfWeek d : DayOfWeek.values()) {
+                this.totalMinimalRequirements += r.getMinimal(d);
+                this.totalOptimalRequirements += r.getOptimal(d);
+            }
+        }
     }
 
     public Contract getContractById(final String id) {
@@ -128,16 +139,8 @@ public class Roster implements Solution<BendableScore> {
         return null;
     }
 
-    public Requirement getRequirementByShiftType(final ShiftType type) {
-        return this.requirementsByShiftType.get(type);
-    }
-
-    public Requirement getRequirementBySkill(final Skill skill) {
-        return this.requirementsBySkill.get(skill);
-    }
-
-    public Set<Requirement> getRequirements() {
-        return this.requirements;
+    public Map<Skill, Requirement> getRequirementByShiftTypeAndSkill(final ShiftType type) {
+        return this.requirementsByShiftTypeAndSkill.get(type);
     }
 
     @Override
@@ -165,6 +168,14 @@ public class Roster implements Solution<BendableScore> {
 
     public Set<Skill> getSkills() {
         return this.skills;
+    }
+
+    public int getTotalMinimalRequirements() {
+        return this.totalMinimalRequirements;
+    }
+
+    public int getTotalOptimalRequirements() {
+        return this.totalOptimalRequirements;
     }
 
     public void setNursesRequiringCompleteWeekends(final Set<Nurse> nursesRequiringCompleteWeekends) {
