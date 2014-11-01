@@ -2,7 +2,7 @@ package org.optaplanner.examples.inrc2.domain;
 
 public enum DayOfWeek {
 
-    FRIDAY(4, "Fri"), MONDAY(0, "Mon"), SATURDAY(5, "Sat", true), SUNDAY(6, "Sun", true), THURSDAY(3, "Thu"), TUESDAY(1, "Tue"), WEDNESDAY(2, "Wed");
+    MONDAY(0, "Mon"), TUESDAY(1, "Tue"), WEDNESDAY(2, "Wed"), THURSDAY(3, "Thu"), FRIDAY(4, "Fri"), SATURDAY(5, "Sat", true), SUNDAY(6, "Sun", true);
 
     private final String abbreviation;
 
