@@ -1,9 +1,11 @@
 package org.optaplanner.examples.inrc2.io;
 
 import java.io.File;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 
@@ -13,6 +15,8 @@ import org.optaplanner.core.api.domain.solution.Solution;
 import org.optaplanner.core.api.score.buildin.bendable.BendableScore;
 import org.optaplanner.examples.inrc2.domain.Roster;
 import org.optaplanner.examples.inrc2.domain.Shift;
+import org.optaplanner.examples.inrc2.domain.ShiftType;
+import org.optaplanner.examples.inrc2.domain.Skill;
 import org.optaplanner.persistence.common.api.domain.solution.SolutionFileIO;
 
 public class Inrc2SolutionFileIO implements SolutionFileIO {
@@ -56,21 +60,36 @@ public class Inrc2SolutionFileIO implements SolutionFileIO {
         lines.add("\"scenario\":\"" + r.getId() + "\",");
         lines.add("\"week\":\"" + r.getCurrentWeekNum() + "\",");
         lines.add("\"assignments\" : [");
-        final Set<Shift> assignedShifts = new LinkedHashSet<Shift>();
-        for (final Shift s : r.getShifts()) {
-            if (s.getSkill() == null) {
+        final Map<ShiftType, Map<Skill, Set<Shift>>> ordered = new LinkedHashMap<ShiftType, Map<Skill, Set<Shift>>>();
+        int total = 0;
+        for (final Shift s : r.getShifts()) { // sort the assignments so that the solutions are human-readable
+            final Skill skill = s.getSkill();
+            if (skill == null) { // nurse not assigned to anything
                 continue;
             }
-            assignedShifts.add(s);
+            final ShiftType st = s.getShiftType();
+            if (!ordered.containsKey(st)) {
+                ordered.put(st, new LinkedHashMap<Skill, Set<Shift>>());
+            }
+            final Map<Skill, Set<Shift>> subordered = ordered.get(st);
+            if (!subordered.containsKey(skill)) {
+                subordered.put(skill, new LinkedHashSet<Shift>());
+            }
+            subordered.get(skill).add(s);
+            total++;
         }
         int i = 1;
-        for (final Shift s : assignedShifts) {
-            String line = "{\"nurse\" : \"" + s.getNurse().getId() + "\",\"day\" : \"" + s.getDay().getAbbreviation() + "\",\"shiftType\" : \"" + s.getShiftType().getId() + "\",\"skill\" : \"" + s.getSkill().getId() + "\"}";
-            if (i < assignedShifts.size()) {
-                line = line + ",";
-                i++;
+        for (final Map<Skill, Set<Shift>> perSkill: ordered.values()) {
+            for (final Set<Shift> shifts : perSkill.values()) {
+                for (final Shift s: shifts) {
+                    String line = "{\"nurse\" : \"" + s.getNurse().getId() + "\",\"day\" : \"" + s.getDay().getAbbreviation() + "\",\"shiftType\" : \"" + s.getShiftType().getId() + "\",\"skill\" : \"" + s.getSkill().getId() + "\"}";
+                    if (i < total) {
+                        line = line + ",";
+                        i++;
+                    }
+                    lines.add(line);
+                }
             }
-            lines.add(line);
         }
         lines.add("]}");
         try {
@@ -79,5 +98,4 @@ public class Inrc2SolutionFileIO implements SolutionFileIO {
             throw new IllegalStateException("Failed writing solution.", ex);
         }
     }
-
 }
