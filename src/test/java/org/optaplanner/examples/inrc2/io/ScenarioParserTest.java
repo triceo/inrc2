@@ -79,7 +79,7 @@ public class ScenarioParserTest {
     public void testParsing() throws JsonProcessingException, IOException {
         final Pair<Integer, SortedMap<String, NurseHistory>> h = HistoryParser.parse(this.nurseHistory);
         final Pair<List<ShiftOffRequest>, List<WeekData>> requirements = WeekParser.parse(this.week);
-        final Roster result = ScenarioParser.parse(this.scenario, h.getSecond(), h.getFirst() + 1, requirements.getSecond(), requirements.getFirst());
+        final Roster result = ScenarioParser.parse(this.scenario, h.getSecond(), h.getFirst(), requirements.getSecond(), requirements.getFirst());
         Assert.assertNotNull(result);
     }
 
