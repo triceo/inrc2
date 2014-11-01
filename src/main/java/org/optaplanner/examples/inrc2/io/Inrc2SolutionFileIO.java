@@ -42,7 +42,7 @@ public class Inrc2SolutionFileIO implements SolutionFileIO {
         try {
             final Pair<Integer, SortedMap<String, NurseHistory>> histories = HistoryParser.parse(history);
             final Pair<List<ShiftOffRequest>, List<WeekData>> weekData = WeekParser.parse(week);
-            return ScenarioParser.parse(scenario, histories.getSecond(), histories.getFirst(), weekData.getSecond(), weekData.getFirst());
+            return ScenarioParser.parse(scenario, histories.getSecond(), histories.getFirst() + 1, weekData.getSecond(), weekData.getFirst());
         } catch (final Exception e) {
             throw new IllegalStateException("Parser failure.", e);
         }
