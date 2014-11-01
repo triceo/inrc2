@@ -104,7 +104,6 @@ public class Main {
         solver.setRandomFactory(new DefaultRandomFactory(RandomType.JDK, seed));
         solver.solve(roster);
         final Roster bestSolution = (Roster) solver.getBestSolution();
-        System.out.println(bestSolution);
         System.out.println("Score achieved: " + bestSolution.getScore());
 
         // write the solution
