@@ -55,7 +55,7 @@ public class Inrc2SolutionFileIO implements SolutionFileIO {
         lines.add("{");
         lines.add("\"scenario\":\"" + r.getId() + "\",");
         lines.add("\"week\":\"" + r.getCurrentWeekNum() + "\",");
-        lines.add("\"assignments\" : [ {");
+        lines.add("\"assignments\" : [");
         final Set<Shift> assignedShifts = new LinkedHashSet<Shift>();
         for (final Shift s : r.getShifts()) {
             if (s.getSkill() == null) {
