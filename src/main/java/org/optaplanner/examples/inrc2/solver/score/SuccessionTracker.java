@@ -26,7 +26,7 @@ final class SuccessionTracker {
         return day.getNumber() + 1; // 0 is the last shift from previous week
     }
 
-    private int incompleteWeekendPenalty = 0;
+    private int incompleteWeekendCount = 0;
 
     private final int maxAllowedAssignments;
     private final int maxAllowedConsecutiveWorkingDays;
@@ -72,9 +72,9 @@ final class SuccessionTracker {
         }
         final boolean nowCompleteWeekend = this.hasCompletedWeekend();
         if (previouslyCompleteWeekend && !nowCompleteWeekend) {
-            this.incompleteWeekendPenalty += 1;
+            this.incompleteWeekendCount += 1;
         } else if (!previouslyCompleteWeekend && nowCompleteWeekend) {
-            this.incompleteWeekendPenalty -= 1;
+            this.incompleteWeekendCount -= 1;
         }
         final boolean nowWorkingWeekend = this.hasWorkingWeekend();
         if (previouslyWorkingWeekend && !nowWorkingWeekend) {
@@ -106,12 +106,12 @@ final class SuccessionTracker {
         return SuccessionEvaluator.countConsecutiveWorkingDayViolations(this.successions, this.previousConsecutiveWorkingDays, this.minAllowedConsecutiveWorkingDays, this.maxAllowedConsecutiveWorkingDays);
     }
 
-    public int countWeekendsOutsideBounds() {
-        return Math.min(0, this.totalWorkingWeekends - this.maxAllowedWorkingWeekends);
+    public int countIncompleteWeekends() {
+        return this.incompleteWeekendCount;
     }
 
-    public int getIncompleteWeekendPenalty() {
-        return this.incompleteWeekendPenalty;
+    public int countWeekendsOutsideBounds() {
+        return Math.min(0, this.totalWorkingWeekends - this.maxAllowedWorkingWeekends);
     }
 
     public int getSuccessionPenalty() {
@@ -155,9 +155,9 @@ final class SuccessionTracker {
         }
         final boolean nowCompleteWeekend = this.hasCompletedWeekend();
         if (previouslyCompleteWeekend && !nowCompleteWeekend) {
-            this.incompleteWeekendPenalty += 1;
+            this.incompleteWeekendCount += 1;
         } else if (!previouslyCompleteWeekend && nowCompleteWeekend) {
-            this.incompleteWeekendPenalty -= 1;
+            this.incompleteWeekendCount -= 1;
         }
         final boolean nowWorkingWeekend = this.hasWorkingWeekend();
         if (previouslyWorkingWeekend && !nowWorkingWeekend) {
@@ -181,9 +181,9 @@ final class SuccessionTracker {
         }
         final boolean nowCompleteWeekend = this.hasCompletedWeekend();
         if (previouslyCompleteWeekend && !nowCompleteWeekend) {
-            this.incompleteWeekendPenalty += 1;
+            this.incompleteWeekendCount += 1;
         } else if (!previouslyCompleteWeekend && nowCompleteWeekend) {
-            this.incompleteWeekendPenalty -= 1;
+            this.incompleteWeekendCount -= 1;
         }
         final boolean nowWorkingWeekend = this.hasWorkingWeekend();
         if (previouslyWorkingWeekend && !nowWorkingWeekend) {
