@@ -57,9 +57,9 @@ public class Inrc2SolutionFileIO implements SolutionFileIO {
         final Roster r = (Roster) arg0;
         final List<String> lines = new LinkedList<String>();
         lines.add("{");
-        lines.add("\"scenario\":\"" + r.getId() + "\",");
-        lines.add("\"week\":\"" + r.getCurrentWeekNum() + "\",");
-        lines.add("\"assignments\" : [");
+        lines.add("  \"scenario\" : \"" + r.getId() + "\",");
+        lines.add("  \"week\" : " + r.getCurrentWeekNum() + ",");
+        lines.add("  \"assignments\" : [ {");
         final Map<ShiftType, Map<Skill, Set<Shift>>> ordered = new LinkedHashMap<ShiftType, Map<Skill, Set<Shift>>>();
         int total = 0;
         for (final Shift s : r.getShifts()) { // sort the assignments so that the solutions are human-readable
@@ -82,16 +82,20 @@ public class Inrc2SolutionFileIO implements SolutionFileIO {
         for (final Map<Skill, Set<Shift>> perSkill : ordered.values()) {
             for (final Set<Shift> shifts : perSkill.values()) {
                 for (final Shift s : shifts) {
-                    String line = "{\"nurse\" : \"" + s.getNurse().getId() + "\",\"day\" : \"" + s.getDay().getAbbreviation() + "\",\"shiftType\" : \"" + s.getShiftType().getId() + "\",\"skill\" : \"" + s.getSkill().getId() + "\"}";
+                    lines.add("    \"nurse\" : \"" + s.getNurse().getId() + "\",");
+                    lines.add("    \"day\" : \"" + s.getDay().getAbbreviation() + "\",");
+                    lines.add("    \"shiftType\" : \"" + s.getShiftType().getId() + "\",");
+                    lines.add("    \"skill\" : \"" + s.getSkill().getId() + "\"");
                     if (i < total) {
-                        line = line + ",";
-                        i++;
+                        lines.add("  }, {");
+                    } else {
+                        lines.add("  } ]");
                     }
-                    lines.add(line);
+                    i++;
                 }
             }
         }
-        lines.add("]}");
+        lines.add("}");
         try {
             FileUtils.writeLines(arg1, lines);
         } catch (final Exception ex) {
