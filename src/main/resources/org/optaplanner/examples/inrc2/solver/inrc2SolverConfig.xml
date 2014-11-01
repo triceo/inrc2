@@ -12,7 +12,7 @@
     <incrementalScoreCalculatorClass>org.optaplanner.examples.inrc2.solver.score.Inrc2IncrementalScoreCalculator</incrementalScoreCalculatorClass>
   </scoreDirectorFactory>
   <termination>
-    <minutesSpentLimit>5</minutesSpentLimit>
+    <minutesSpentLimit>1</minutesSpentLimit>
   </termination>
   
   <constructionHeuristic>

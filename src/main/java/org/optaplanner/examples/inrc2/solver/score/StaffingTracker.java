@@ -20,7 +20,7 @@ public class StaffingTracker {
     public StaffingTracker(final Roster r) {
         this.roster = r;
         this.nursesMissingFromMinimal = r.getTotalMinimalRequirements();
-        this.nursesMissingFromMinimal = r.getTotalOptimalRequirements();
+        this.nursesMissingFromOptimal = r.getTotalOptimalRequirements();
     }
 
     public void add(final Shift shift) {
