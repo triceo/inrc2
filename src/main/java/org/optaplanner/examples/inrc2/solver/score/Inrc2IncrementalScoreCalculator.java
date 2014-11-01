@@ -11,6 +11,7 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
 
     private static final int COMPLETE_WEEKENDS_WEIGHT = 30;
     private static final int CONSECUTIVE_DAYS_ON_WEIGHT = 30;
+    private static final int CONSECUTIVE_SHIFTS_WEIGHT = 15;
     private static final int PREFERENCE_WEIGHT = 10;
     private static final int SUBOMPTIMAL_WEIGHT = 30;
     private static final int TOTAL_ASSIGNMENTS_WEIGHT = 20;
@@ -89,7 +90,8 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
                 this.nurseTracker.countWeekendsOutOfBounds() * Inrc2IncrementalScoreCalculator.WORKING_WEEKENDS_WEIGHT +
                 this.nurseTracker.countAssignmentsOutOfBounds() * Inrc2IncrementalScoreCalculator.TOTAL_ASSIGNMENTS_WEIGHT +
                 this.staffingTracker.countNursesMissingFromOptimal() * Inrc2IncrementalScoreCalculator.SUBOMPTIMAL_WEIGHT +
-                this.nurseTracker.countConsecutiveWorkindDayViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_DAYS_ON_WEIGHT);
+                this.nurseTracker.countConsecutiveWorkingDayViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_DAYS_ON_WEIGHT +
+                this.nurseTracker.countConsecutiveShiftTypeViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_SHIFTS_WEIGHT);
         final int softest = -(this.nurseTracker.countAssignmentsOutOfBounds() +
                 this.nurseTracker.countWeekendsOutOfBounds());
         return BendableScore.valueOf(new int[]{hard}, new int[]{soft, softest});

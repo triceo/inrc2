@@ -108,7 +108,7 @@ public class ScenarioParser {
             final NurseHistory nurseHistory = history.get(name);
             final ShiftType previousAssignedShiftType = shiftTypes.get(nurseHistory.getShiftTypeId());
             final int numPreviousAssignments = nurseHistory.getNumAssignments();
-            final int numPreviousConsecutiveAssignments = nurseHistory.getNumConsecutiveAssignments();
+            final int numPreviousConsecutiveAssignments = nurseHistory.getNumConsecutiveAssignmentsOfSameShiftType();
             final int numPreviousConsecutiveDaysOff = nurseHistory.getNumConsecutiveDaysOff();
             final int numPreviousConsecutiveDaysOn = nurseHistory.getNumConsecutiveDaysOn();
             final int numPreviousWorkingWeekends = nurseHistory.getNumWorkingWeekends();

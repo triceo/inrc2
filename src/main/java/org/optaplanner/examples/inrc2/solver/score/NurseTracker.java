@@ -19,7 +19,8 @@ public class NurseTracker {
     private int successionPenalty = 0;
     private int totalAssignmentsOutOfBounds = 0;
 
-    private int totalConsecutiveWorkindDayViolations = 0;
+    private int totalConsecutiveWorkingDayViolations = 0;
+    private int totalConsecutiveShiftTypeViolations = 0;
     private int totalWeekedsOverLimit = 0;
 
     public NurseTracker(final Roster r) {
@@ -37,9 +38,11 @@ public class NurseTracker {
         this.incompleteWeekendsCount -= t.getIncompleteWeekendPenalty();
         this.totalAssignmentsOutOfBounds -= t.countAssignmentsOutsideBounds();
         this.totalWeekedsOverLimit -= t.countWeekendsOutsideBounds();
-        this.totalConsecutiveWorkindDayViolations -= t.countConsecutiveWorkingDayViolations();
+        this.totalConsecutiveWorkingDayViolations -= t.countConsecutiveWorkingDayViolations();
+        this.totalConsecutiveShiftTypeViolations -= t.countConsecutiveShiftTypeViolations();
         t.add(shift);
-        this.totalConsecutiveWorkindDayViolations += t.countConsecutiveWorkingDayViolations();
+        this.totalConsecutiveShiftTypeViolations += t.countConsecutiveShiftTypeViolations();
+        this.totalConsecutiveWorkingDayViolations += t.countConsecutiveWorkingDayViolations();
         this.totalWeekedsOverLimit += t.countWeekendsOutsideBounds();
         this.totalAssignmentsOutOfBounds += t.countAssignmentsOutsideBounds();
         this.incompleteWeekendsCount += t.getIncompleteWeekendPenalty();
@@ -54,8 +57,12 @@ public class NurseTracker {
         return this.totalAssignmentsOutOfBounds;
     }
 
-    public int countConsecutiveWorkindDayViolations() {
-        return this.totalConsecutiveWorkindDayViolations;
+    public int countConsecutiveWorkingDayViolations() {
+        return this.totalConsecutiveWorkingDayViolations;
+    }
+
+    public int countConsecutiveShiftTypeViolations() {
+        return this.totalConsecutiveShiftTypeViolations;
     }
 
     public int countIgnoredShiftPreferences() {
@@ -92,9 +99,11 @@ public class NurseTracker {
         this.incompleteWeekendsCount -= t.getIncompleteWeekendPenalty();
         this.totalAssignmentsOutOfBounds -= t.countAssignmentsOutsideBounds();
         this.totalWeekedsOverLimit -= t.countWeekendsOutsideBounds();
-        this.totalConsecutiveWorkindDayViolations -= t.countConsecutiveWorkingDayViolations();
+        this.totalConsecutiveWorkingDayViolations -= t.countConsecutiveWorkingDayViolations();
+        this.totalConsecutiveShiftTypeViolations -= t.countConsecutiveShiftTypeViolations();
         t.changeShiftType(shift, previous);
-        this.totalConsecutiveWorkindDayViolations += t.countConsecutiveWorkingDayViolations();
+        this.totalConsecutiveShiftTypeViolations += t.countConsecutiveShiftTypeViolations();
+        this.totalConsecutiveWorkingDayViolations += t.countConsecutiveWorkingDayViolations();
         this.totalWeekedsOverLimit += t.countWeekendsOutsideBounds();
         this.totalAssignmentsOutOfBounds += t.countAssignmentsOutsideBounds();
         this.incompleteWeekendsCount += t.getIncompleteWeekendPenalty();
@@ -133,9 +142,11 @@ public class NurseTracker {
         this.incompleteWeekendsCount -= t.getIncompleteWeekendPenalty();
         this.totalAssignmentsOutOfBounds -= t.countAssignmentsOutsideBounds();
         this.totalWeekedsOverLimit -= t.countWeekendsOutsideBounds();
-        this.totalConsecutiveWorkindDayViolations -= t.countConsecutiveWorkingDayViolations();
+        this.totalConsecutiveWorkingDayViolations -= t.countConsecutiveWorkingDayViolations();
+        this.totalConsecutiveShiftTypeViolations -= t.countConsecutiveShiftTypeViolations();
         t.remove(shift);
-        this.totalConsecutiveWorkindDayViolations += t.countConsecutiveWorkingDayViolations();
+        this.totalConsecutiveShiftTypeViolations += t.countConsecutiveShiftTypeViolations();
+        this.totalConsecutiveWorkingDayViolations += t.countConsecutiveWorkingDayViolations();
         this.totalWeekedsOverLimit += t.countWeekendsOutsideBounds();
         this.totalAssignmentsOutOfBounds += t.countAssignmentsOutsideBounds();
         this.incompleteWeekendsCount += t.getIncompleteWeekendPenalty();

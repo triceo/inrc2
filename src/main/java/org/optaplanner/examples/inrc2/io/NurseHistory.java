@@ -5,7 +5,7 @@ class NurseHistory {
     private final String id;
 
     private final int numAssignments, numWorkingWeekends, numConsecutiveAssignments, numConsecutiveDaysOn,
-    numConsecutiveDaysOff;
+            numConsecutiveDaysOff;
 
     private final String shiftTypeId;
 
@@ -27,7 +27,7 @@ class NurseHistory {
         return this.numAssignments;
     }
 
-    public int getNumConsecutiveAssignments() {
+    public int getNumConsecutiveAssignmentsOfSameShiftType() {
         return this.numConsecutiveAssignments;
     }
 

@@ -11,6 +11,16 @@ public class SuccessionEvaluator {
 
     }
 
+    public static int countConsecutiveShiftTypeViolations(final ShiftType[] successions, final int historical, final int minAllowed, final int maxAllowed) {
+        return SuccessionEvaluator.countConsecutiveViolations(new ConsecutionBreakingCriteria() {
+
+            @Override
+            public boolean breaks(final ShiftType current, final ShiftType previous) {
+                return current == null || current != previous;
+            }
+        }, successions, historical, minAllowed, maxAllowed);
+    }
+
     private static int countConsecutiveViolations(final ConsecutionBreakingCriteria criteria, final ShiftType[] successions, final int historical, final int minAllowed, final int maxAllowed) {
         int totalViolations = 0;
         // left boundary
@@ -59,6 +69,9 @@ public class SuccessionEvaluator {
                 consecutive++;
             }
         }
+        if (totalViolations < 0) {
+            throw new IllegalStateException("This should not be happening.");
+        }
         return totalViolations;
     }
 
@@ -71,5 +84,4 @@ public class SuccessionEvaluator {
             }
         }, successions, historical, minAllowed, maxAllowed);
     }
-
 }

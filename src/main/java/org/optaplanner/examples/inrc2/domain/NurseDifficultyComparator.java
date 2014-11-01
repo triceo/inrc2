@@ -6,7 +6,7 @@ public class NurseDifficultyComparator implements Comparator<Shift> {
 
     private static long getUtilization(final Nurse n) {
         long i = (n.getNumPreviousAssignments() + 1);
-        i *= (n.getNumPreviousConsecutiveAssignments() + 1);
+        i *= (n.getNumPreviousConsecutiveAssignmentsOfSameShiftType() + 1);
         i *= (n.getNumPreviousWorkingWeekends() + 1);
         i *= (n.getNumPreviousConsecutiveDaysOn() + 1);
         i /= (n.getNumPreviousConsecutiveDaysOff() + 1);
