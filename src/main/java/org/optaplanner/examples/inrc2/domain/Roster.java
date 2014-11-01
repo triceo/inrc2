@@ -206,4 +206,11 @@ public class Roster implements Solution<BendableScore> {
         this.score = score;
     }
 
+    @Override
+    public String toString() {
+        final StringBuilder builder = new StringBuilder();
+        builder.append("Roster [id=").append(this.id).append(", currentWeekNum=").append(this.currentWeekNum).append(", numWeeksTotal=").append(this.numWeeksTotal).append(", shifts=").append(this.shifts).append(", score=").append(this.score).append("]");
+        return builder.toString();
+    }
+
 }
