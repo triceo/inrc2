@@ -83,7 +83,7 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
 
     @Override
     public BendableScore calculateScore() {
-        final int hard = -(this.nurseTracker.getSuccessionPenalty() +
+        final int hard = -(this.nurseTracker.countInvalidShiftSuccessions() +
                 this.staffingTracker.countNursesMissingFromMinimal());
         final int soft = -(this.nurseTracker.countIgnoredShiftPreferences() * Inrc2IncrementalScoreCalculator.PREFERENCE_WEIGHT +
                 this.nurseTracker.countIncompleteWeekends() * Inrc2IncrementalScoreCalculator.COMPLETE_WEEKENDS_WEIGHT +

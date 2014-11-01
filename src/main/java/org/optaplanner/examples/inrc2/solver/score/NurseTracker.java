@@ -16,11 +16,11 @@ public class NurseTracker {
 
     private final Map<Nurse, SuccessionTracker> nurses = new HashMap<Nurse, SuccessionTracker>();
 
-    private int successionPenalty = 0;
     private int totalAssignmentsOutOfBounds = 0;
-
     private int totalConsecutiveShiftTypeViolations = 0;
+
     private int totalConsecutiveWorkingDayViolations = 0;
+    private int totalInvalidShiftSuccessions = 0;
     private int totalWeekendsOverLimit = 0;
 
     public NurseTracker(final Roster r) {
@@ -31,23 +31,32 @@ public class NurseTracker {
             return;
         }
         final SuccessionTracker t = this.forNurse(shift.getNurse());
-        this.successionPenalty -= t.countBrokenSuccessions();
-        if (!t.hasCompleteWeekend()) {
-            this.incompleteWeekendsCount -= 1;
+        // only for weekends
+        final boolean isWeekend = shift.getDay().isWeekend();
+        boolean wasCompleteWeekend = false;
+        if (isWeekend) {
+            wasCompleteWeekend = t.hasCompleteWeekend();
+            this.totalWeekendsOverLimit -= t.countWeekendsOutsideBounds();
         }
+        // and the rest
+        this.totalInvalidShiftSuccessions -= t.countBrokenSuccessions();
         this.totalAssignmentsOutOfBounds -= t.countAssignmentsOutsideBounds();
-        this.totalWeekendsOverLimit -= t.countWeekendsOutsideBounds();
         this.totalConsecutiveWorkingDayViolations -= t.countConsecutiveWorkingDayViolations();
         this.totalConsecutiveShiftTypeViolations -= t.countConsecutiveShiftTypeViolations();
-        t.add(shift);
+        t.add(shift); // actualy preform the operation
         this.totalConsecutiveShiftTypeViolations += t.countConsecutiveShiftTypeViolations();
         this.totalConsecutiveWorkingDayViolations += t.countConsecutiveWorkingDayViolations();
-        this.totalWeekendsOverLimit += t.countWeekendsOutsideBounds();
         this.totalAssignmentsOutOfBounds += t.countAssignmentsOutsideBounds();
-        if (!t.hasCompleteWeekend()) {
-            this.incompleteWeekendsCount += 1;
+        if (isWeekend) { // only for weekends
+            this.totalWeekendsOverLimit += t.countWeekendsOutsideBounds();
+            final boolean isCompleteWeekend = t.hasCompleteWeekend();
+            if (isCompleteWeekend && !wasCompleteWeekend) {
+                this.incompleteWeekendsCount -= 1;
+            } else if (!isCompleteWeekend && wasCompleteWeekend) {
+                this.incompleteWeekendsCount += 1;
+            }
         }
-        this.successionPenalty += t.countBrokenSuccessions();
+        this.totalInvalidShiftSuccessions += t.countBrokenSuccessions();
         // determine preference penalty
         if (shift.getShiftType() != null && !shift.isDesired()) {
             this.ignoredShiftPreferenceCount += 1;
@@ -74,6 +83,10 @@ public class NurseTracker {
         return this.incompleteWeekendsCount;
     }
 
+    public int countInvalidShiftSuccessions() {
+        return this.totalInvalidShiftSuccessions;
+    }
+
     public int countWeekendsOutOfBounds() {
         return this.totalWeekendsOverLimit;
     }
@@ -87,38 +100,43 @@ public class NurseTracker {
         return pnt;
     }
 
-    public int getSuccessionPenalty() {
-        return this.successionPenalty;
-    }
-
     public void changeShiftType(final Shift shift, final ShiftType previous) {
         if (shift.getSkill() == null) { // nurse is not actually assigned
             return;
         }
         final SuccessionTracker t = this.forNurse(shift.getNurse());
-        this.successionPenalty -= t.countBrokenSuccessions();
-        if (!t.hasCompleteWeekend()) {
-            this.incompleteWeekendsCount -= 1;
+        // only for weekends
+        final boolean isWeekend = shift.getDay().isWeekend();
+        boolean wasCompleteWeekend = false;
+        if (isWeekend) {
+            wasCompleteWeekend = t.hasCompleteWeekend();
+            this.totalWeekendsOverLimit -= t.countWeekendsOutsideBounds();
         }
+        // and the rest
+        this.totalInvalidShiftSuccessions -= t.countBrokenSuccessions();
         this.totalAssignmentsOutOfBounds -= t.countAssignmentsOutsideBounds();
-        this.totalWeekendsOverLimit -= t.countWeekendsOutsideBounds();
         this.totalConsecutiveWorkingDayViolations -= t.countConsecutiveWorkingDayViolations();
         this.totalConsecutiveShiftTypeViolations -= t.countConsecutiveShiftTypeViolations();
         t.changeShiftType(shift, previous);
         this.totalConsecutiveShiftTypeViolations += t.countConsecutiveShiftTypeViolations();
         this.totalConsecutiveWorkingDayViolations += t.countConsecutiveWorkingDayViolations();
-        this.totalWeekendsOverLimit += t.countWeekendsOutsideBounds();
         this.totalAssignmentsOutOfBounds += t.countAssignmentsOutsideBounds();
-        if (!t.hasCompleteWeekend()) {
-            this.incompleteWeekendsCount += 1;
-        }
-        this.successionPenalty += t.countBrokenSuccessions();
+        this.totalInvalidShiftSuccessions += t.countBrokenSuccessions();
         // determine preference penalty
         if (previous != null && !shift.isDesired(previous)) {
             this.ignoredShiftPreferenceCount -= 1;
         }
         if (shift.getShiftType() != null && !shift.isDesired()) {
             this.ignoredShiftPreferenceCount += 1;
+        }
+        if (isWeekend) { // only for weekends
+            this.totalWeekendsOverLimit += t.countWeekendsOutsideBounds();
+            final boolean isCompleteWeekend = t.hasCompleteWeekend();
+            if (isCompleteWeekend && !wasCompleteWeekend) {
+                this.incompleteWeekendsCount -= 1;
+            } else if (!isCompleteWeekend && wasCompleteWeekend) {
+                this.incompleteWeekendsCount += 1;
+            }
         }
     }
 
@@ -143,26 +161,35 @@ public class NurseTracker {
             return;
         }
         final SuccessionTracker t = this.forNurse(shift.getNurse());
-        this.successionPenalty -= t.countBrokenSuccessions();
-        if (!t.hasCompleteWeekend()) {
-            this.incompleteWeekendsCount -= 1;
+        // only for weekends
+        final boolean isWeekend = shift.getDay().isWeekend();
+        boolean wasCompleteWeekend = false;
+        if (isWeekend) {
+            wasCompleteWeekend = t.hasCompleteWeekend();
+            this.totalWeekendsOverLimit -= t.countWeekendsOutsideBounds();
         }
+        // and the rest
+        this.totalInvalidShiftSuccessions -= t.countBrokenSuccessions();
         this.totalAssignmentsOutOfBounds -= t.countAssignmentsOutsideBounds();
-        this.totalWeekendsOverLimit -= t.countWeekendsOutsideBounds();
         this.totalConsecutiveWorkingDayViolations -= t.countConsecutiveWorkingDayViolations();
         this.totalConsecutiveShiftTypeViolations -= t.countConsecutiveShiftTypeViolations();
         t.remove(shift);
         this.totalConsecutiveShiftTypeViolations += t.countConsecutiveShiftTypeViolations();
         this.totalConsecutiveWorkingDayViolations += t.countConsecutiveWorkingDayViolations();
-        this.totalWeekendsOverLimit += t.countWeekendsOutsideBounds();
         this.totalAssignmentsOutOfBounds += t.countAssignmentsOutsideBounds();
-        if (!t.hasCompleteWeekend()) {
-            this.incompleteWeekendsCount += 1;
-        }
-        this.successionPenalty += t.countBrokenSuccessions();
+        this.totalInvalidShiftSuccessions += t.countBrokenSuccessions();
         // determine preference penalty
         if (shift.getShiftType() != null && !shift.isDesired()) {
             this.ignoredShiftPreferenceCount -= 1;
+        }
+        if (isWeekend) { // only for weekends
+            this.totalWeekendsOverLimit += t.countWeekendsOutsideBounds();
+            final boolean isCompleteWeekend = t.hasCompleteWeekend();
+            if (isCompleteWeekend && !wasCompleteWeekend) {
+                this.incompleteWeekendsCount -= 1;
+            } else if (!isCompleteWeekend && wasCompleteWeekend) {
+                this.incompleteWeekendsCount += 1;
+            }
         }
     }
 
