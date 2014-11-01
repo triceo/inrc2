@@ -10,6 +10,7 @@ import java.util.SortedMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.math3.util.Pair;
 import org.optaplanner.core.api.domain.solution.Solution;
+import org.optaplanner.core.api.score.buildin.bendable.BendableScore;
 import org.optaplanner.examples.inrc2.domain.Roster;
 import org.optaplanner.examples.inrc2.domain.Shift;
 import org.optaplanner.persistence.common.api.domain.solution.SolutionFileIO;
@@ -34,7 +35,7 @@ public class Inrc2SolutionFileIO implements SolutionFileIO {
     }
 
     @Override
-    public Solution read(final File arg0) {
+    public Solution<BendableScore> read(final File arg0) {
         final File scenario = new File(arg0, Inrc2SolutionFileIO.SCENARIO_FILENAME);
         final File history = new File(arg0, Inrc2SolutionFileIO.HISTORY_FILENAME);
         final File week = new File(arg0, Inrc2SolutionFileIO.WEEK_DATA_FILENAME);
@@ -51,8 +52,10 @@ public class Inrc2SolutionFileIO implements SolutionFileIO {
     public void write(final Solution arg0, final File arg1) {
         final Roster r = (Roster) arg0;
         final List<String> lines = new LinkedList<String>();
-        lines.add("SOLUTION");
-        lines.add(r.getCurrentWeekNum() + " " + r.getId());
+        lines.add("{");
+        lines.add("\"scenario\":\"" + r.getId() + "\",");
+        lines.add("\"week\":\"" + r.getCurrentWeekNum() + "\",");
+        lines.add("\"assignments\" : [ {");
         final Set<Shift> assignedShifts = new LinkedHashSet<Shift>();
         for (final Shift s : r.getShifts()) {
             if (s.getSkill() == null) {
@@ -60,10 +63,16 @@ public class Inrc2SolutionFileIO implements SolutionFileIO {
             }
             assignedShifts.add(s);
         }
-        lines.add("ASSIGNMENTS = " + assignedShifts.size());
+        int i = 1;
         for (final Shift s : assignedShifts) {
-            lines.add(s.getNurse().getId() + " " + s.getDay().getAbbreviation() + " " + s.getShiftType().getId() + " " + s.getSkill().getId());
+            String line = "{\"nurse\" : \"" + s.getNurse().getId() + "\",\"day\" : \"" + s.getDay().getAbbreviation() + "\",\"shiftType\" : \"" + s.getShiftType().getId() + "\",\"skill\" : \"" + s.getSkill().getId() + "\"}";
+            if (i < assignedShifts.size()) {
+                line = line + ",";
+                i++;
+            }
+            lines.add(line);
         }
+        lines.add("]}");
         try {
             FileUtils.writeLines(arg1, lines);
         } catch (final Exception ex) {

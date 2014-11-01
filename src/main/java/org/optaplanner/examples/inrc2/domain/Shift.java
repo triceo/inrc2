@@ -37,6 +37,7 @@ public class Shift {
 
     @ValueRangeProvider(id = "nurseSkills")
     public Collection<Skill> getNurseSkills() {
+        // FIXME some skills may not be required in some shifts
         return this.getNurse().getSkills();
     }
 
