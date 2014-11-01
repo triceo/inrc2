@@ -8,7 +8,7 @@ import org.optaplanner.examples.inrc2.domain.ShiftType;
 
 final class SuccessionTracker {
 
-    private static int calculateSuccessionPenalty(final ShiftType previous, final ShiftType current, final ShiftType next) {
+    private static int countBrokenSuccessions(final ShiftType previous, final ShiftType current, final ShiftType next) {
         if (current == null) {
             return 0;
         }
@@ -26,17 +26,17 @@ final class SuccessionTracker {
         return day.getNumber() + 1; // 0 is the last shift from previous week
     }
 
+    private int brokenSuccessionCount = 0;
     private final int maxAllowedAssignments;
     private final int maxAllowedConsecutiveWorkingDays;
     private final int maxAllowedWorkingWeekends;
     private final int minAllowedAssignments;
-    private final int minAllowedConsecutiveWorkingDays;
 
+    private final int minAllowedConsecutiveWorkingDays;
     private final int previousConsecutiveAssignments;
     private final int previousConsecutiveWorkingDays;
     private final int previousWorkingWeekends;
     private final boolean requiresCompleteWeekend;
-    private int successionPenalty = 0;
     // +2 as 0 is previous and 8 prevents AIOOBE
     private final ShiftType[] successions = new ShiftType[DayOfWeek.values().length + 2];
     private int totalAssignments = 0;
@@ -62,7 +62,7 @@ final class SuccessionTracker {
         final ShiftType previousShiftType = this.successions[dayIndex - 1];
         final ShiftType nextShiftType = this.successions[dayIndex + 1];
         this.successions[dayIndex] = currentShiftType;
-        this.successionPenalty += SuccessionTracker.calculateSuccessionPenalty(previousShiftType, currentShiftType, nextShiftType);
+        this.brokenSuccessionCount += SuccessionTracker.countBrokenSuccessions(previousShiftType, currentShiftType, nextShiftType);
         if (currentShiftType != null) {
             this.totalAssignments += 1;
         }
@@ -82,6 +82,10 @@ final class SuccessionTracker {
         }
     }
 
+    public int countBrokenSuccessions() {
+        return this.brokenSuccessionCount;
+    }
+
     public int countConsecutiveShiftTypeViolations() {
         return SuccessionEvaluator.countConsecutiveShiftTypeViolations(this.successions, this.previousConsecutiveAssignments, this.minAllowedConsecutiveWorkingDays, this.maxAllowedConsecutiveWorkingDays);
     }
@@ -93,10 +97,6 @@ final class SuccessionTracker {
     public int countWeekendsOutsideBounds() {
         final int totalWorkingWeekendCount = this.hasWorkingWeekend() ? this.previousWorkingWeekends + 1 : this.previousWorkingWeekends;
         return Math.min(0, totalWorkingWeekendCount - this.maxAllowedWorkingWeekends);
-    }
-
-    public int getSuccessionPenalty() {
-        return this.successionPenalty;
     }
 
     public boolean hasCompleteWeekend() {
@@ -126,7 +126,7 @@ final class SuccessionTracker {
         final ShiftType previousShiftType = this.successions[dayIndex - 1];
         final ShiftType nextShiftType = this.successions[dayIndex + 1];
         this.successions[dayIndex] = currentShiftType;
-        this.successionPenalty += SuccessionTracker.calculateSuccessionPenalty(previousShiftType, currentShiftType, nextShiftType) - SuccessionTracker.calculateSuccessionPenalty(previousShiftType, formerShiftType, nextShiftType);
+        this.brokenSuccessionCount += SuccessionTracker.countBrokenSuccessions(previousShiftType, currentShiftType, nextShiftType) - SuccessionTracker.countBrokenSuccessions(previousShiftType, formerShiftType, nextShiftType);
         if (currentShiftType == null && formerShiftType != null) {
             this.totalAssignments -= 1;
         } else if (currentShiftType != null && formerShiftType == null) {
@@ -140,7 +140,7 @@ final class SuccessionTracker {
         final ShiftType previousShiftType = this.successions[dayIndex - 1];
         final ShiftType nextShiftType = this.successions[dayIndex + 1];
         this.successions[dayIndex] = null;
-        this.successionPenalty -= SuccessionTracker.calculateSuccessionPenalty(previousShiftType, currentShiftType, nextShiftType);
+        this.brokenSuccessionCount -= SuccessionTracker.countBrokenSuccessions(previousShiftType, currentShiftType, nextShiftType);
         if (currentShiftType != null) {
             this.totalAssignments -= 1;
         }
