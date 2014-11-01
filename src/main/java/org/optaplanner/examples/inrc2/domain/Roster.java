@@ -3,6 +3,7 @@ package org.optaplanner.examples.inrc2.domain;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -17,6 +18,8 @@ import org.optaplanner.core.api.score.buildin.bendable.BendableScore;
 @PlanningSolution
 public class Roster implements Solution<BendableScore> {
 
+    private int consecutiveDayOffViolationsForUnusedNurses;
+
     private Set<Contract> contracts;
 
     private SortedMap<String, Contract> contractsById;
@@ -30,8 +33,6 @@ public class Roster implements Solution<BendableScore> {
     private Set<Nurse> nurses;
 
     private SortedMap<String, Nurse> nursesById;
-
-    private Set<Nurse> nursesRequiringCompleteWeekends;
 
     private Set<Requirement> requirements;
 
@@ -51,6 +52,7 @@ public class Roster implements Solution<BendableScore> {
     private SortedMap<String, Skill> skillsById;
 
     private int totalMinimalRequirements = 0;
+
     private int totalOptimalRequirements = 0;
 
     protected Roster() {
@@ -78,6 +80,7 @@ public class Roster implements Solution<BendableScore> {
         this.requirementsByShiftTypeAndSkill = Collections.unmodifiableMap(a);
         this.requirements = new LinkedHashSet<Requirement>(requirements);
         // and now create the entities
+        final Set<Nurse> unusedNurses = new HashSet<Nurse>();
         for (final DayOfWeek day : DayOfWeek.values()) {
             for (final Nurse nurse : this.nurses) {
                 // only add those skills to the nurse that make sense; will eliminate a lot of useless selection
@@ -98,21 +101,12 @@ public class Roster implements Solution<BendableScore> {
                 }
                 if (nurseSpecificRequirements.size() == 0) {
                     // this particular nurse is not required at all
-                    // FIXME may cause some problems in consecutive tracking
+                    unusedNurses.add(nurse);
                     continue;
                 }
                 this.shifts.add(new Shift(nurse, day, nurseSpecificRequirements));
             }
         }
-        // now assemble nurses who require complete weekends
-        final Set<Nurse> c = new LinkedHashSet<Nurse>();
-        for (final Nurse n : this.nurses) {
-            if (!n.getContract().isCompleteWeekends()) {
-                continue;
-            }
-            c.add(n);
-        }
-        this.nursesRequiringCompleteWeekends = Collections.unmodifiableSet(c);
         // sum up requirements to know how many at most we need
         for (final Requirement r : this.requirements) {
             for (final DayOfWeek d : DayOfWeek.values()) {
@@ -120,6 +114,19 @@ public class Roster implements Solution<BendableScore> {
                 this.totalOptimalRequirements += r.getOptimal(d);
             }
         }
+        /*
+         * calculate the day-off penalties for unused nurses; they will never make it through the score calculator, so
+         * this is essentially a constant that needs to be included.
+         */
+        for (final Nurse n : unusedNurses) {
+            final int previous = n.getNumPreviousConsecutiveDaysOff();
+            final int current = DayOfWeek.values().length;
+            this.consecutiveDayOffViolationsForUnusedNurses += Math.min(current, previous + current);
+        }
+    }
+
+    public int getConsecutiveDayOffViolationsForUnusedNurses() {
+        return this.consecutiveDayOffViolationsForUnusedNurses;
     }
 
     public Contract getContractById(final String id) {
@@ -148,10 +155,6 @@ public class Roster implements Solution<BendableScore> {
 
     public Set<Nurse> getNurses() {
         return this.nurses;
-    }
-
-    public Set<Nurse> getNursesRequiringCompleteWeekends() {
-        return this.nursesRequiringCompleteWeekends;
     }
 
     @Override
@@ -196,10 +199,6 @@ public class Roster implements Solution<BendableScore> {
 
     public int getTotalOptimalRequirements() {
         return this.totalOptimalRequirements;
-    }
-
-    public void setNursesRequiringCompleteWeekends(final Set<Nurse> nursesRequiringCompleteWeekends) {
-        this.nursesRequiringCompleteWeekends = nursesRequiringCompleteWeekends;
     }
 
     @Override

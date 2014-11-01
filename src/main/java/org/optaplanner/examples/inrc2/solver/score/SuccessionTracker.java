@@ -28,12 +28,14 @@ final class SuccessionTracker {
 
     private int brokenSuccessionCount = 0;
     private final int maxAllowedAssignments;
+    private final int maxAllowedConsecutiveDaysOff;
     private final int maxAllowedConsecutiveWorkingDays;
     private final int maxAllowedWorkingWeekends;
     private final int minAllowedAssignments;
-
+    private final int minAllowedConsecutiveDaysOff;
     private final int minAllowedConsecutiveWorkingDays;
     private final int previousConsecutiveAssignments;
+    private final int previousConsecutiveDaysOff;
     private final int previousConsecutiveWorkingDays;
     private final int previousWorkingWeekends;
     private final boolean requiresCompleteWeekend;
@@ -49,10 +51,13 @@ final class SuccessionTracker {
         this.maxAllowedAssignments = c.getMaxAssignments();
         this.minAllowedConsecutiveWorkingDays = c.getMinConsecutiveDaysOn();
         this.maxAllowedConsecutiveWorkingDays = c.getMaxConsecutiveDaysOn();
+        this.minAllowedConsecutiveDaysOff = c.getMinConsecutiveDaysOff();
+        this.maxAllowedConsecutiveDaysOff = c.getMaxConsecutiveDaysOff();
         this.maxAllowedWorkingWeekends = c.getMaxWorkingWeekends();
         this.totalAssignments = n.getNumPreviousAssignments();
         this.previousWorkingWeekends = n.getNumPreviousWorkingWeekends();
         this.previousConsecutiveWorkingDays = n.getNumPreviousConsecutiveDaysOn();
+        this.previousConsecutiveDaysOff = n.getNumPreviousConsecutiveDaysOff();
         this.previousConsecutiveAssignments = n.getNumPreviousConsecutiveAssignmentsOfSameShiftType();
     }
 
@@ -84,6 +89,10 @@ final class SuccessionTracker {
 
     public int countBrokenSuccessions() {
         return this.brokenSuccessionCount;
+    }
+
+    public int countConsecutiveDayOffViolations() {
+        return SuccessionEvaluator.countConsecutiveDayOffViolations(this.successions, this.previousConsecutiveDaysOff, this.minAllowedConsecutiveDaysOff, this.maxAllowedConsecutiveDaysOff);
     }
 
     public int countConsecutiveShiftTypeViolations() {

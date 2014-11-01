@@ -10,6 +10,7 @@ import org.optaplanner.examples.inrc2.domain.Skill;
 public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculator<Roster> {
 
     private static final int COMPLETE_WEEKENDS_WEIGHT = 30;
+    private static final int CONSECUTIVE_DAYS_OFF_WEIGHT = 30;
     private static final int CONSECUTIVE_DAYS_ON_WEIGHT = 30;
     private static final int CONSECUTIVE_SHIFTS_WEIGHT = 15;
     private static final int PREFERENCE_WEIGHT = 10;
@@ -91,7 +92,8 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
                 this.nurseTracker.countAssignmentsOutOfBounds() * Inrc2IncrementalScoreCalculator.TOTAL_ASSIGNMENTS_WEIGHT +
                 this.staffingTracker.countNursesMissingFromOptimal() * Inrc2IncrementalScoreCalculator.SUBOMPTIMAL_WEIGHT +
                 this.nurseTracker.countConsecutiveWorkingDayViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_DAYS_ON_WEIGHT +
-                this.nurseTracker.countConsecutiveShiftTypeViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_SHIFTS_WEIGHT);
+                this.nurseTracker.countConsecutiveShiftTypeViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_SHIFTS_WEIGHT +
+                this.nurseTracker.countConsecutiveDayOffViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_DAYS_OFF_WEIGHT);
         final int softest = -(this.nurseTracker.countAssignmentsOutOfBounds() +
                 this.nurseTracker.countWeekendsOutOfBounds());
         return BendableScore.valueOf(new int[]{hard}, new int[]{soft, softest});

@@ -11,19 +11,17 @@ import org.optaplanner.examples.inrc2.domain.ShiftType;
 public class NurseTracker {
 
     private int ignoredShiftPreferenceCount = 0;
-
     private int incompleteWeekendsCount = 0;
-
     private final Map<Nurse, SuccessionTracker> nurses = new HashMap<Nurse, SuccessionTracker>();
-
     private int totalAssignmentsOutOfBounds = 0;
+    private int totalConsecutiveDayOffViolations = 0;
     private int totalConsecutiveShiftTypeViolations = 0;
-
     private int totalConsecutiveWorkingDayViolations = 0;
     private int totalInvalidShiftSuccessions = 0;
     private int totalWeekendsOverLimit = 0;
 
     public NurseTracker(final Roster r) {
+        this.totalConsecutiveDayOffViolations = r.getConsecutiveDayOffViolationsForUnusedNurses();
     }
 
     public void add(final Shift shift) {
@@ -43,7 +41,9 @@ public class NurseTracker {
         this.totalAssignmentsOutOfBounds -= t.countAssignmentsOutsideBounds();
         this.totalConsecutiveWorkingDayViolations -= t.countConsecutiveWorkingDayViolations();
         this.totalConsecutiveShiftTypeViolations -= t.countConsecutiveShiftTypeViolations();
+        this.totalConsecutiveDayOffViolations -= t.countConsecutiveDayOffViolations();
         t.add(shift); // actualy preform the operation
+        this.totalConsecutiveDayOffViolations += t.countConsecutiveDayOffViolations();
         this.totalConsecutiveShiftTypeViolations += t.countConsecutiveShiftTypeViolations();
         this.totalConsecutiveWorkingDayViolations += t.countConsecutiveWorkingDayViolations();
         this.totalAssignmentsOutOfBounds += t.countAssignmentsOutsideBounds();
@@ -65,6 +65,10 @@ public class NurseTracker {
 
     public int countAssignmentsOutOfBounds() {
         return this.totalAssignmentsOutOfBounds;
+    }
+
+    public int countConsecutiveDayOffViolations() {
+        return this.totalConsecutiveDayOffViolations;
     }
 
     public int countConsecutiveShiftTypeViolations() {
@@ -117,7 +121,9 @@ public class NurseTracker {
         this.totalAssignmentsOutOfBounds -= t.countAssignmentsOutsideBounds();
         this.totalConsecutiveWorkingDayViolations -= t.countConsecutiveWorkingDayViolations();
         this.totalConsecutiveShiftTypeViolations -= t.countConsecutiveShiftTypeViolations();
+        this.totalConsecutiveDayOffViolations -= t.countConsecutiveDayOffViolations();
         t.changeShiftType(shift, previous);
+        this.totalConsecutiveDayOffViolations += t.countConsecutiveDayOffViolations();
         this.totalConsecutiveShiftTypeViolations += t.countConsecutiveShiftTypeViolations();
         this.totalConsecutiveWorkingDayViolations += t.countConsecutiveWorkingDayViolations();
         this.totalAssignmentsOutOfBounds += t.countAssignmentsOutsideBounds();
@@ -173,7 +179,9 @@ public class NurseTracker {
         this.totalAssignmentsOutOfBounds -= t.countAssignmentsOutsideBounds();
         this.totalConsecutiveWorkingDayViolations -= t.countConsecutiveWorkingDayViolations();
         this.totalConsecutiveShiftTypeViolations -= t.countConsecutiveShiftTypeViolations();
+        this.totalConsecutiveDayOffViolations -= t.countConsecutiveDayOffViolations();
         t.remove(shift);
+        this.totalConsecutiveDayOffViolations += t.countConsecutiveDayOffViolations();
         this.totalConsecutiveShiftTypeViolations += t.countConsecutiveShiftTypeViolations();
         this.totalConsecutiveWorkingDayViolations += t.countConsecutiveWorkingDayViolations();
         this.totalAssignmentsOutOfBounds += t.countAssignmentsOutsideBounds();
