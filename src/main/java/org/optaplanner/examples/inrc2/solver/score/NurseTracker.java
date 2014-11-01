@@ -19,14 +19,11 @@ public class NurseTracker {
     private int successionPenalty = 0;
     private int totalAssignmentsOutOfBounds = 0;
 
-    private int totalConsecutiveWorkingDayViolations = 0;
     private int totalConsecutiveShiftTypeViolations = 0;
+    private int totalConsecutiveWorkingDayViolations = 0;
     private int totalWeekedsOverLimit = 0;
 
     public NurseTracker(final Roster r) {
-        // by default, all nurses who require complete weekends have incomplete weekends
-        // FIXME this is a faulty assumption
-        this.incompleteWeekendsCount = r.getNursesRequiringCompleteWeekends().size();
     }
 
     public void add(final Shift shift) {
@@ -35,7 +32,9 @@ public class NurseTracker {
         }
         final SuccessionTracker t = this.forNurse(shift.getNurse());
         this.successionPenalty -= t.getSuccessionPenalty();
-        this.incompleteWeekendsCount -= t.countIncompleteWeekends();
+        if (!t.hasCompleteWeekend()) {
+            this.incompleteWeekendsCount -= 1;
+        }
         this.totalAssignmentsOutOfBounds -= t.countAssignmentsOutsideBounds();
         this.totalWeekedsOverLimit -= t.countWeekendsOutsideBounds();
         this.totalConsecutiveWorkingDayViolations -= t.countConsecutiveWorkingDayViolations();
@@ -45,7 +44,9 @@ public class NurseTracker {
         this.totalConsecutiveWorkingDayViolations += t.countConsecutiveWorkingDayViolations();
         this.totalWeekedsOverLimit += t.countWeekendsOutsideBounds();
         this.totalAssignmentsOutOfBounds += t.countAssignmentsOutsideBounds();
-        this.incompleteWeekendsCount += t.countIncompleteWeekends();
+        if (!t.hasCompleteWeekend()) {
+            this.incompleteWeekendsCount += 1;
+        }
         this.successionPenalty += t.getSuccessionPenalty();
         // determine preference penalty
         if (shift.getShiftType() != null && !shift.isDesired()) {
@@ -57,12 +58,12 @@ public class NurseTracker {
         return this.totalAssignmentsOutOfBounds;
     }
 
-    public int countConsecutiveWorkingDayViolations() {
-        return this.totalConsecutiveWorkingDayViolations;
-    }
-
     public int countConsecutiveShiftTypeViolations() {
         return this.totalConsecutiveShiftTypeViolations;
+    }
+
+    public int countConsecutiveWorkingDayViolations() {
+        return this.totalConsecutiveWorkingDayViolations;
     }
 
     public int countIgnoredShiftPreferences() {
@@ -96,7 +97,9 @@ public class NurseTracker {
         }
         final SuccessionTracker t = this.forNurse(shift.getNurse());
         this.successionPenalty -= t.getSuccessionPenalty();
-        this.incompleteWeekendsCount -= t.countIncompleteWeekends();
+        if (!t.hasCompleteWeekend()) {
+            this.incompleteWeekendsCount -= 1;
+        }
         this.totalAssignmentsOutOfBounds -= t.countAssignmentsOutsideBounds();
         this.totalWeekedsOverLimit -= t.countWeekendsOutsideBounds();
         this.totalConsecutiveWorkingDayViolations -= t.countConsecutiveWorkingDayViolations();
@@ -106,7 +109,9 @@ public class NurseTracker {
         this.totalConsecutiveWorkingDayViolations += t.countConsecutiveWorkingDayViolations();
         this.totalWeekedsOverLimit += t.countWeekendsOutsideBounds();
         this.totalAssignmentsOutOfBounds += t.countAssignmentsOutsideBounds();
-        this.incompleteWeekendsCount += t.countIncompleteWeekends();
+        if (!t.hasCompleteWeekend()) {
+            this.incompleteWeekendsCount += 1;
+        }
         this.successionPenalty += t.getSuccessionPenalty();
         // determine preference penalty
         if (previous != null && !shift.isDesired(previous)) {
@@ -139,7 +144,9 @@ public class NurseTracker {
         }
         final SuccessionTracker t = this.forNurse(shift.getNurse());
         this.successionPenalty -= t.getSuccessionPenalty();
-        this.incompleteWeekendsCount -= t.countIncompleteWeekends();
+        if (!t.hasCompleteWeekend()) {
+            this.incompleteWeekendsCount -= 1;
+        }
         this.totalAssignmentsOutOfBounds -= t.countAssignmentsOutsideBounds();
         this.totalWeekedsOverLimit -= t.countWeekendsOutsideBounds();
         this.totalConsecutiveWorkingDayViolations -= t.countConsecutiveWorkingDayViolations();
@@ -149,7 +156,9 @@ public class NurseTracker {
         this.totalConsecutiveWorkingDayViolations += t.countConsecutiveWorkingDayViolations();
         this.totalWeekedsOverLimit += t.countWeekendsOutsideBounds();
         this.totalAssignmentsOutOfBounds += t.countAssignmentsOutsideBounds();
-        this.incompleteWeekendsCount += t.countIncompleteWeekends();
+        if (!t.hasCompleteWeekend()) {
+            this.incompleteWeekendsCount += 1;
+        }
         this.successionPenalty += t.getSuccessionPenalty();
         // determine preference penalty
         if (shift.getShiftType() != null && !shift.isDesired()) {
