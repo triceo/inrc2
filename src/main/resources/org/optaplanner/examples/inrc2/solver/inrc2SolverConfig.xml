@@ -20,16 +20,18 @@
   </constructionHeuristic>
   <localSearch>
     <unionMoveSelector>
-      <changeMoveSelector>
-        <valueSelector>
-          <variableName>skill</variableName>
-        </valueSelector>
-      </changeMoveSelector>
-      <changeMoveSelector>
-        <valueSelector>
-          <variableName>shiftType</variableName>
-        </valueSelector>
-      </changeMoveSelector>
+      <cartesianProductMoveSelector>
+        <changeMoveSelector>
+          <valueSelector>
+            <variableName>skill</variableName>
+          </valueSelector>
+        </changeMoveSelector>
+        <changeMoveSelector>
+          <valueSelector>
+            <variableName>shiftType</variableName>
+          </valueSelector>
+        </changeMoveSelector>
+      </cartesianProductMoveSelector>
       <swapMoveSelector>
         <variableNameInclude>shiftType</variableNameInclude>
         <variableNameInclude>skill</variableNameInclude>
