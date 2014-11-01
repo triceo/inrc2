@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <solver>
-  <environmentMode>FULL_ASSERT</environmentMode>
+  <environmentMode>REPRODUCIBLE</environmentMode>
   <solutionClass>org.optaplanner.examples.inrc2.domain.Roster</solutionClass>
   <entityClass>org.optaplanner.examples.inrc2.domain.Shift</entityClass>
 
@@ -18,13 +18,25 @@
   </constructionHeuristic>
   <localSearch>
     <unionMoveSelector>
+      <changeMoveSelector>
+        <valueSelector>
+          <variableName>skill</variableName>
+        </valueSelector>
+      </changeMoveSelector>
+      <changeMoveSelector>
+        <valueSelector>
+          <variableName>shiftType</variableName>
+        </valueSelector>
+      </changeMoveSelector>
       <cartesianProductMoveSelector>
         <changeMoveSelector>
+          <entitySelector id="entitySelector" />
           <valueSelector>
             <variableName>skill</variableName>
           </valueSelector>
         </changeMoveSelector>
         <changeMoveSelector>
+          <entitySelector mimicSelectorRef="entitySelector"/>
           <valueSelector>
             <variableName>shiftType</variableName>
           </valueSelector>
