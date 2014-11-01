@@ -6,6 +6,8 @@ import org.apache.commons.math3.util.Pair;
 
 public class Requirement {
 
+    private final boolean[] isRequiredOn = new boolean[7];
+
     private final int[] minimalRequirement = new int[7];
 
     private final int[] optimalRequirement = new int[7];
@@ -34,6 +36,10 @@ public class Requirement {
         this.optimalRequirement[DayOfWeek.FRIDAY.getNumber()] = friday.getSecond();
         this.optimalRequirement[DayOfWeek.SATURDAY.getNumber()] = saturday.getSecond();
         this.optimalRequirement[DayOfWeek.FRIDAY.getNumber()] = sunday.getSecond();
+        for (final DayOfWeek d : DayOfWeek.values()) {
+            final int num = d.getNumber();
+            this.isRequiredOn[num] = (this.minimalRequirement[num] > 0) || (this.optimalRequirement[num] > 0);
+        }
     }
 
     public int getMinimal(final DayOfWeek d) {
@@ -50,6 +56,10 @@ public class Requirement {
 
     public Skill getSkill() {
         return this.skill;
+    }
+
+    public boolean isRequired(final DayOfWeek d) {
+        return this.isRequiredOn[d.getNumber()];
     }
 
     @Override

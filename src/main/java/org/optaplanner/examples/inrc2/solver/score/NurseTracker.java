@@ -22,6 +22,7 @@ public class NurseTracker {
 
     public NurseTracker(final Roster r) {
         // by default, all nurses who require complete weekends have incomplete weekends
+        // FIXME this is a faulty assumption
         this.incompleteWeekendsCount = r.getNursesRequiringCompleteWeekends().size();
     }
 

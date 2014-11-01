@@ -1,6 +1,10 @@
 package org.optaplanner.examples.inrc2.domain;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 
 import org.optaplanner.core.api.domain.entity.PlanningEntity;
 import org.optaplanner.core.api.domain.valuerange.ValueRangeProvider;
@@ -14,6 +18,9 @@ public class Shift {
 
     private Nurse nurse;
 
+    private Set<ShiftType> possibleShiftTypes;
+    private Map<ShiftType, Set<Skill>> possibleSkills;
+
     private ShiftType shiftType;
 
     private Skill skill;
@@ -22,9 +29,25 @@ public class Shift {
         // Planner cloning prevent immutability
     }
 
-    protected Shift(final Nurse nurse, final DayOfWeek day) {
+    protected Shift(final Nurse nurse, final DayOfWeek day, final Map<ShiftType, Set<Skill>> possibleSkills) {
         this.nurse = nurse;
         this.day = day;
+        this.possibleSkills = Collections.unmodifiableMap(possibleSkills);
+        this.possibleShiftTypes = Collections.unmodifiableSet(new LinkedHashSet<ShiftType>(possibleSkills.keySet()));
+    }
+
+    @ValueRangeProvider(id = "shiftTypes")
+    public Collection<ShiftType> getAllowedShiftTypes() {
+        return this.possibleShiftTypes;
+    }
+
+    @ValueRangeProvider(id = "nurseSkills")
+    public Collection<Skill> getAllowedSkills() {
+        if (this.getShiftType() == null) {
+            // for CH; even though some of those shift types may prove useless
+            return this.nurse.getSkills();
+        }
+        return this.possibleSkills.get(this.getShiftType());
     }
 
     public DayOfWeek getDay() {
@@ -35,13 +58,7 @@ public class Shift {
         return this.nurse;
     }
 
-    @ValueRangeProvider(id = "nurseSkills")
-    public Collection<Skill> getNurseSkills() {
-        // FIXME some skills may not be required in some shifts
-        return this.getNurse().getSkills();
-    }
-
-    @PlanningVariable(valueRangeProviderRefs = "shiftType")
+    @PlanningVariable(valueRangeProviderRefs = "shiftTypes")
     public ShiftType getShiftType() {
         return this.shiftType;
     }
@@ -63,14 +80,6 @@ public class Shift {
             throw new IllegalStateException("Null shift type. Cannot tell whether desired or not.");
         }
         return !this.getNurse().shiftOffRequested(this.day, shiftType);
-    }
-
-    public void setDay(final DayOfWeek day) {
-        this.day = day;
-    }
-
-    public void setNurse(final Nurse nurse) {
-        this.nurse = nurse;
     }
 
     public void setShiftType(final ShiftType shiftType) {

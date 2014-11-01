@@ -12,7 +12,6 @@ import java.util.SortedMap;
 import org.optaplanner.core.api.domain.solution.PlanningEntityCollectionProperty;
 import org.optaplanner.core.api.domain.solution.PlanningSolution;
 import org.optaplanner.core.api.domain.solution.Solution;
-import org.optaplanner.core.api.domain.valuerange.ValueRangeProvider;
 import org.optaplanner.core.api.score.buildin.bendable.BendableScore;
 
 @PlanningSolution
@@ -81,7 +80,28 @@ public class Roster implements Solution<BendableScore> {
         // and now create the entities
         for (final DayOfWeek day : DayOfWeek.values()) {
             for (final Nurse nurse : this.nurses) {
-                this.shifts.add(new Shift(nurse, day));
+                // only add those skills to the nurse that make sense; will eliminate a lot of useless selection
+                final Map<ShiftType, Set<Skill>> nurseSpecificRequirements = new HashMap<ShiftType, Set<Skill>>();
+                for (final Requirement r : requirements) {
+                    if (!r.isRequired(day)) {
+                        // on this day, we don't need a nurse of a particular skill for a particular shift type
+                        continue;
+                    } else if (!nurse.getSkills().contains(r.getSkill())) {
+                        // this nurse does not have that particular skill
+                        continue;
+                    }
+                    final ShiftType st = r.getShiftType();
+                    if (!nurseSpecificRequirements.containsKey(st)) {
+                        nurseSpecificRequirements.put(st, new LinkedHashSet<Skill>());
+                    }
+                    nurseSpecificRequirements.get(st).add(r.getSkill());
+                }
+                if (nurseSpecificRequirements.size() == 0) {
+                    // this particular nurse is not required at all
+                    // FIXME may cause some problems in consecutive tracking
+                    continue;
+                }
+                this.shifts.add(new Shift(nurse, day, nurseSpecificRequirements));
             }
         }
         // now assemble nurses who require complete weekends
@@ -158,7 +178,6 @@ public class Roster implements Solution<BendableScore> {
         return this.shiftTypesById.get(id);
     }
 
-    @ValueRangeProvider(id = "shiftType")
     public Set<ShiftType> getShiftTypes() {
         return this.shiftTypes;
     }
