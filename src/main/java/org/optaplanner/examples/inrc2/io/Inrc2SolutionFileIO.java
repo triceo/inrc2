@@ -12,7 +12,7 @@ import java.util.SortedMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.math3.util.Pair;
 import org.optaplanner.core.api.domain.solution.Solution;
-import org.optaplanner.core.api.score.buildin.bendable.BendableScore;
+import org.optaplanner.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
 import org.optaplanner.examples.inrc2.domain.Roster;
 import org.optaplanner.examples.inrc2.domain.Shift;
 import org.optaplanner.examples.inrc2.domain.ShiftType;
@@ -39,7 +39,7 @@ public class Inrc2SolutionFileIO implements SolutionFileIO {
     }
 
     @Override
-    public Solution<BendableScore> read(final File arg0) {
+    public Solution<HardMediumSoftScore> read(final File arg0) {
         final File scenario = new File(arg0, Inrc2SolutionFileIO.SCENARIO_FILENAME);
         final File history = new File(arg0, Inrc2SolutionFileIO.HISTORY_FILENAME);
         final File week = new File(arg0, Inrc2SolutionFileIO.WEEK_DATA_FILENAME);
@@ -79,9 +79,9 @@ public class Inrc2SolutionFileIO implements SolutionFileIO {
             total++;
         }
         int i = 1;
-        for (final Map<Skill, Set<Shift>> perSkill: ordered.values()) {
+        for (final Map<Skill, Set<Shift>> perSkill : ordered.values()) {
             for (final Set<Shift> shifts : perSkill.values()) {
-                for (final Shift s: shifts) {
+                for (final Shift s : shifts) {
                     String line = "{\"nurse\" : \"" + s.getNurse().getId() + "\",\"day\" : \"" + s.getDay().getAbbreviation() + "\",\"shiftType\" : \"" + s.getShiftType().getId() + "\",\"skill\" : \"" + s.getSkill().getId() + "\"}";
                     if (i < total) {
                         line = line + ",";

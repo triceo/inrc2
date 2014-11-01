@@ -13,10 +13,10 @@ import java.util.SortedMap;
 import org.optaplanner.core.api.domain.solution.PlanningEntityCollectionProperty;
 import org.optaplanner.core.api.domain.solution.PlanningSolution;
 import org.optaplanner.core.api.domain.solution.Solution;
-import org.optaplanner.core.api.score.buildin.bendable.BendableScore;
+import org.optaplanner.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
 
 @PlanningSolution
-public class Roster implements Solution<BendableScore> {
+public class Roster implements Solution<HardMediumSoftScore> {
 
     private int consecutiveDayOffViolationsForUnusedNurses;
 
@@ -38,7 +38,7 @@ public class Roster implements Solution<BendableScore> {
 
     private Map<ShiftType, Map<Skill, Requirement>> requirementsByShiftTypeAndSkill;
 
-    private BendableScore score;
+    private HardMediumSoftScore score;
 
     private final Set<Shift> shifts = new LinkedHashSet<Shift>();
 
@@ -168,7 +168,7 @@ public class Roster implements Solution<BendableScore> {
     }
 
     @Override
-    public BendableScore getScore() {
+    public HardMediumSoftScore getScore() {
         return this.score;
     }
 
@@ -202,7 +202,7 @@ public class Roster implements Solution<BendableScore> {
     }
 
     @Override
-    public void setScore(final BendableScore score) {
+    public void setScore(final HardMediumSoftScore score) {
         this.score = score;
     }
 

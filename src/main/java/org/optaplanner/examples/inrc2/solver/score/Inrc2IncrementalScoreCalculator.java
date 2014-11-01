@@ -1,6 +1,6 @@
 package org.optaplanner.examples.inrc2.solver.score;
 
-import org.optaplanner.core.api.score.buildin.bendable.BendableScore;
+import org.optaplanner.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
 import org.optaplanner.core.impl.score.director.incremental.IncrementalScoreCalculator;
 import org.optaplanner.examples.inrc2.domain.Roster;
 import org.optaplanner.examples.inrc2.domain.Shift;
@@ -83,10 +83,10 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
     }
 
     @Override
-    public BendableScore calculateScore() {
+    public HardMediumSoftScore calculateScore() {
         final int hard = -(this.nurseTracker.countInvalidShiftSuccessions() +
                 this.staffingTracker.countNursesMissingFromMinimal());
-        final int soft = -(this.nurseTracker.countIgnoredShiftPreferences() * Inrc2IncrementalScoreCalculator.PREFERENCE_WEIGHT +
+        final int medium = -(this.nurseTracker.countIgnoredShiftPreferences() * Inrc2IncrementalScoreCalculator.PREFERENCE_WEIGHT +
                 this.nurseTracker.countIncompleteWeekends() * Inrc2IncrementalScoreCalculator.COMPLETE_WEEKENDS_WEIGHT +
                 this.nurseTracker.countWeekendsOutOfBounds() * Inrc2IncrementalScoreCalculator.WORKING_WEEKENDS_WEIGHT +
                 this.nurseTracker.countAssignmentsOutOfBounds() * Inrc2IncrementalScoreCalculator.TOTAL_ASSIGNMENTS_WEIGHT +
@@ -95,8 +95,8 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
                 this.nurseTracker.countConsecutiveShiftTypeViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_SHIFTS_WEIGHT +
                 this.nurseTracker.countConsecutiveDayOffViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_DAYS_OFF_WEIGHT);
         // if we can achieve the above with less nurses, the better
-        final int softest = -(this.nurseTracker.countTotalAssignment());
-        return BendableScore.valueOf(new int[]{hard}, new int[]{soft, softest});
+        final int soft = -(this.nurseTracker.countTotalAssignment());
+        return HardMediumSoftScore.valueOf(hard, medium, soft);
     }
 
     private void onShiftTypeSet(final Shift entity) {
