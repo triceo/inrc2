@@ -10,6 +10,7 @@ import org.optaplanner.examples.inrc2.domain.Skill;
 public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculator<Roster> {
 
     private static final int COMPLETE_WEEKENDS_WEIGHT = 30;
+    private static final int CONSECUTIVE_DAYS_ON_WEIGHT = 30;
     private static final int PREFERENCE_WEIGHT = 10;
     private static final int SUBOMPTIMAL_WEIGHT = 30;
     private static final int TOTAL_ASSIGNMENTS_WEIGHT = 20;
@@ -85,11 +86,12 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
                 this.staffingTracker.countNursesMissingFromMinimal());
         final int soft = -(this.nurseTracker.countIgnoredShiftPreferences() * Inrc2IncrementalScoreCalculator.PREFERENCE_WEIGHT +
                 this.nurseTracker.countIncompleteWeekends() * Inrc2IncrementalScoreCalculator.COMPLETE_WEEKENDS_WEIGHT +
-                this.nurseTracker.countTotalWeekdsOutOfBounds() * Inrc2IncrementalScoreCalculator.WORKING_WEEKENDS_WEIGHT +
-                this.nurseTracker.countTotalAssignmentsOutOfBounds() * Inrc2IncrementalScoreCalculator.TOTAL_ASSIGNMENTS_WEIGHT +
-                this.staffingTracker.countNursesMissingFromOptimal() * Inrc2IncrementalScoreCalculator.SUBOMPTIMAL_WEIGHT);
-        final int softest = -(this.nurseTracker.countTotalAssignmentsOutOfBounds() +
-                this.nurseTracker.countTotalWeekdsOutOfBounds());
+                this.nurseTracker.countWeekendsOutOfBounds() * Inrc2IncrementalScoreCalculator.WORKING_WEEKENDS_WEIGHT +
+                this.nurseTracker.countAssignmentsOutOfBounds() * Inrc2IncrementalScoreCalculator.TOTAL_ASSIGNMENTS_WEIGHT +
+                this.staffingTracker.countNursesMissingFromOptimal() * Inrc2IncrementalScoreCalculator.SUBOMPTIMAL_WEIGHT +
+                this.nurseTracker.countConsecutiveWorkindDayViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_DAYS_ON_WEIGHT);
+        final int softest = -(this.nurseTracker.countAssignmentsOutOfBounds() +
+                this.nurseTracker.countWeekendsOutOfBounds());
         return BendableScore.valueOf(new int[]{hard}, new int[]{soft, softest});
     }
 

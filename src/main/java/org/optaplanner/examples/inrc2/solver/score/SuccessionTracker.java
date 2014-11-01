@@ -22,19 +22,22 @@ final class SuccessionTracker {
         return penalty;
     }
 
-    private static final int getDayIndex(final DayOfWeek day) {
+    protected static final int getDayIndex(final DayOfWeek day) {
         return day.getNumber() + 1; // 0 is the last shift from previous week
     }
 
     private int incompleteWeekendPenalty = 0;
 
     private final int maxAllowedAssignments;
+    private final int maxAllowedConsecutiveWorkingDays;
     private final int maxAllowedWorkingWeekends;
     private final int minAllowedAssignments;
+    private final int minAllowedConsecutiveWorkingDays;
 
+    private final int previousConsecutiveAssignments;
     private final boolean requiresCompleteWeekend;
     private int successionPenalty = 0;
-    // +2 as 0 is previous and 8 prevents AIOUB
+    // +2 as 0 is previous and 8 prevents AIOOBE
     private final ShiftType[] successions = new ShiftType[DayOfWeek.values().length + 2];
     private int totalAssignments = 0;
     private int totalWorkingWeekends = 0;
@@ -45,9 +48,12 @@ final class SuccessionTracker {
         this.requiresCompleteWeekend = c.isCompleteWeekends();
         this.minAllowedAssignments = c.getMinAssignments();
         this.maxAllowedAssignments = c.getMaxAssignments();
+        this.minAllowedConsecutiveWorkingDays = c.getMinConsecutiveDaysOff();
+        this.maxAllowedConsecutiveWorkingDays = c.getMaxConsecutiveDaysOff();
         this.maxAllowedWorkingWeekends = c.getMaxWorkingWeekends();
         this.totalAssignments = n.getNumPreviousAssignments();
         this.totalWorkingWeekends = n.getNumPreviousWorkingWeekends();
+        this.previousConsecutiveAssignments = n.getNumPreviousConsecutiveAssignments();
     }
 
     public void add(final Shift shift) {
@@ -88,6 +94,10 @@ final class SuccessionTracker {
         } else {
             return 0;
         }
+    }
+
+    public int countConsecutiveWorkingDayViolations() {
+        return SuccessionEvaluator.countConsecutiveWorkingDayViolations(this.successions, this.previousConsecutiveAssignments, this.minAllowedConsecutiveWorkingDays, this.maxAllowedConsecutiveWorkingDays);
     }
 
     public int countWeekendsOutsideBounds() {
