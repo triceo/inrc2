@@ -13,6 +13,7 @@ public class NurseTracker {
     private int ignoredShiftPreferenceCount = 0;
     private int incompleteWeekendsCount = 0;
     private final Map<Nurse, SuccessionTracker> nurses = new HashMap<Nurse, SuccessionTracker>();
+    private int totalAssignments = 0;
     private int totalAssignmentsOutOfBounds = 0;
     private int totalConsecutiveDayOffViolations = 0;
     private int totalConsecutiveShiftTypeViolations = 0;
@@ -38,6 +39,7 @@ public class NurseTracker {
         }
         // and the rest
         this.totalInvalidShiftSuccessions -= t.countBrokenSuccessions();
+        this.totalAssignments -= t.countAssignments();
         this.totalAssignmentsOutOfBounds -= t.countAssignmentsOutsideBounds();
         this.totalConsecutiveWorkingDayViolations -= t.countConsecutiveWorkingDayViolations();
         this.totalConsecutiveShiftTypeViolations -= t.countConsecutiveShiftTypeViolations();
@@ -47,6 +49,7 @@ public class NurseTracker {
         this.totalConsecutiveShiftTypeViolations += t.countConsecutiveShiftTypeViolations();
         this.totalConsecutiveWorkingDayViolations += t.countConsecutiveWorkingDayViolations();
         this.totalAssignmentsOutOfBounds += t.countAssignmentsOutsideBounds();
+        this.totalAssignments += t.countAssignments();
         if (isWeekend) { // only for weekends
             this.totalWeekendsOverLimit += t.countWeekendsOutsideBounds();
             final boolean isCompleteWeekend = t.hasCompleteWeekend();
@@ -61,6 +64,10 @@ public class NurseTracker {
         if (shift.getShiftType() != null && !shift.isDesired()) {
             this.ignoredShiftPreferenceCount += 1;
         }
+    }
+
+    public int countTotalAssignment() {
+        return this.totalAssignments;
     }
 
     public int countAssignmentsOutOfBounds() {
@@ -118,6 +125,7 @@ public class NurseTracker {
         }
         // and the rest
         this.totalInvalidShiftSuccessions -= t.countBrokenSuccessions();
+        this.totalAssignments -= t.countAssignments();
         this.totalAssignmentsOutOfBounds -= t.countAssignmentsOutsideBounds();
         this.totalConsecutiveWorkingDayViolations -= t.countConsecutiveWorkingDayViolations();
         this.totalConsecutiveShiftTypeViolations -= t.countConsecutiveShiftTypeViolations();
@@ -127,6 +135,7 @@ public class NurseTracker {
         this.totalConsecutiveShiftTypeViolations += t.countConsecutiveShiftTypeViolations();
         this.totalConsecutiveWorkingDayViolations += t.countConsecutiveWorkingDayViolations();
         this.totalAssignmentsOutOfBounds += t.countAssignmentsOutsideBounds();
+        this.totalAssignments += t.countAssignments();
         this.totalInvalidShiftSuccessions += t.countBrokenSuccessions();
         // determine preference penalty
         if (previous != null && !shift.isDesired(previous)) {
@@ -176,6 +185,7 @@ public class NurseTracker {
         }
         // and the rest
         this.totalInvalidShiftSuccessions -= t.countBrokenSuccessions();
+        this.totalAssignments -= t.countAssignments();
         this.totalAssignmentsOutOfBounds -= t.countAssignmentsOutsideBounds();
         this.totalConsecutiveWorkingDayViolations -= t.countConsecutiveWorkingDayViolations();
         this.totalConsecutiveShiftTypeViolations -= t.countConsecutiveShiftTypeViolations();
@@ -185,6 +195,7 @@ public class NurseTracker {
         this.totalConsecutiveShiftTypeViolations += t.countConsecutiveShiftTypeViolations();
         this.totalConsecutiveWorkingDayViolations += t.countConsecutiveWorkingDayViolations();
         this.totalAssignmentsOutOfBounds += t.countAssignmentsOutsideBounds();
+        this.totalAssignments += t.countAssignments();
         this.totalInvalidShiftSuccessions += t.countBrokenSuccessions();
         // determine preference penalty
         if (shift.getShiftType() != null && !shift.isDesired()) {

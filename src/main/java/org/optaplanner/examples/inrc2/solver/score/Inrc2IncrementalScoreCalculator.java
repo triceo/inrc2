@@ -94,8 +94,8 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
                 this.nurseTracker.countConsecutiveWorkingDayViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_DAYS_ON_WEIGHT +
                 this.nurseTracker.countConsecutiveShiftTypeViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_SHIFTS_WEIGHT +
                 this.nurseTracker.countConsecutiveDayOffViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_DAYS_OFF_WEIGHT);
-        final int softest = -(this.nurseTracker.countAssignmentsOutOfBounds() +
-                this.nurseTracker.countWeekendsOutOfBounds());
+        // if we can achieve the above with less nurses, the better
+        final int softest = -(this.nurseTracker.countTotalAssignment());
         return BendableScore.valueOf(new int[]{hard}, new int[]{soft, softest});
     }
 

@@ -73,6 +73,10 @@ final class SuccessionTracker {
         }
     }
 
+    public int countAssignments() {
+        return this.totalAssignments;
+    }
+
     public int countAssignmentsOutsideBounds() {
         if (this.totalAssignments > this.maxAllowedAssignments) {
             return this.totalAssignments - this.maxAllowedAssignments;
