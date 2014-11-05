@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <solver>
-  <environmentMode>REPRODUCIBLE</environmentMode>
+  <environmentMode>FULL_ASSERT</environmentMode>
   <solutionClass>org.optaplanner.examples.inrc2.domain.Roster</solutionClass>
-  <entityClass>org.optaplanner.examples.inrc2.domain.Shift</entityClass>
+  <entityClass>org.optaplanner.examples.inrc2.domain.MandatoryShift</entityClass>
+  <entityClass>org.optaplanner.examples.inrc2.domain.OptionalShift</entityClass>
 
   <scoreDirectorFactory>
     <initializingScoreTrend>ONLY_DOWN</initializingScoreTrend>
-    <scoreDefinitionType>HARD_MEDIUM_SOFT</scoreDefinitionType>
+    <scoreDefinitionType>HARD_SOFT</scoreDefinitionType>
     <incrementalScoreCalculatorClass>org.optaplanner.examples.inrc2.solver.score.Inrc2IncrementalScoreCalculator</incrementalScoreCalculatorClass>
   </scoreDirectorFactory>
   <termination>
@@ -14,45 +15,56 @@
   </termination>
   
   <constructionHeuristic>
-    <constructionHeuristicType>FIRST_FIT_DECREASING</constructionHeuristicType>
+    <queuedEntityPlacer>
+      <entitySelector id="placerEntitySelector">
+        <cacheType>PHASE</cacheType>
+        <entityClass>org.optaplanner.examples.inrc2.domain.MandatoryShift</entityClass>
+      </entitySelector>
+      <changeMoveSelector>
+        <entitySelector mimicSelectorRef="placerEntitySelector"/>
+      </changeMoveSelector>
+    </queuedEntityPlacer>
+  </constructionHeuristic>
+  <constructionHeuristic>
+    <queuedEntityPlacer>
+      <entitySelector id="placerEntitySelector">
+        <cacheType>PHASE</cacheType>
+        <entityClass>org.optaplanner.examples.inrc2.domain.OptionalShift</entityClass>
+      </entitySelector>
+      <changeMoveSelector>
+        <entitySelector mimicSelectorRef="placerEntitySelector"/>
+      </changeMoveSelector>
+    </queuedEntityPlacer>
   </constructionHeuristic>
   <localSearch>
     <unionMoveSelector>
       <changeMoveSelector>
-        <valueSelector>
-          <variableName>skill</variableName>
-        </valueSelector>
+        <entitySelector>
+          <entityClass>org.optaplanner.examples.inrc2.domain.MandatoryShift</entityClass>
+        </entitySelector>
       </changeMoveSelector>
-      <changeMoveSelector>
-        <valueSelector>
-          <variableName>shiftType</variableName>
-        </valueSelector>
-      </changeMoveSelector>
-      <cartesianProductMoveSelector>
-        <changeMoveSelector>
-          <entitySelector id="entitySelector" />
-          <valueSelector>
-            <variableName>skill</variableName>
-          </valueSelector>
-        </changeMoveSelector>
-        <changeMoveSelector>
-          <entitySelector mimicSelectorRef="entitySelector"/>
-          <valueSelector>
-            <variableName>shiftType</variableName>
-          </valueSelector>
-        </changeMoveSelector>
-      </cartesianProductMoveSelector>
       <swapMoveSelector>
-        <variableNameInclude>shiftType</variableNameInclude>
-        <variableNameInclude>skill</variableNameInclude>
+        <entitySelector>
+          <entityClass>org.optaplanner.examples.inrc2.domain.MandatoryShift</entityClass>
+        </entitySelector>
+      </swapMoveSelector>
+      <changeMoveSelector>
+        <entitySelector>
+          <entityClass>org.optaplanner.examples.inrc2.domain.OptionalShift</entityClass>
+        </entitySelector>
+      </changeMoveSelector>
+      <swapMoveSelector>
+        <entitySelector>
+          <entityClass>org.optaplanner.examples.inrc2.domain.OptionalShift</entityClass>
+        </entitySelector>
       </swapMoveSelector>
     </unionMoveSelector>
     <acceptor>
       <lateAcceptanceSize>400</lateAcceptanceSize>
-      <entityTabuRatio>0.1</entityTabuRatio>
+      <entityTabuRatio>0.1</entityTabuRatio> <!-- TODO report bug; no entities = HashMap exception from tabu size = -1 -->
     </acceptor>
     <forager>
-      <acceptedCountLimit>2</acceptedCountLimit>
+      <acceptedCountLimit>1</acceptedCountLimit>
     </forager>
   </localSearch>
 </solver>

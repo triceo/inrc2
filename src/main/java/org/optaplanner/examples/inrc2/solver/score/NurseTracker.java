@@ -3,91 +3,177 @@ package org.optaplanner.examples.inrc2.solver.score;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.optaplanner.examples.inrc2.domain.DayOfWeek;
 import org.optaplanner.examples.inrc2.domain.Nurse;
 import org.optaplanner.examples.inrc2.domain.Roster;
 import org.optaplanner.examples.inrc2.domain.Shift;
 import org.optaplanner.examples.inrc2.domain.ShiftType;
 
-public class NurseTracker {
+class NurseTracker {
 
-    private int ignoredShiftPreferenceCount = 0;
+    // FIXME this is wrong!
+    private static final int countAssignmentsOutOfBounds(final NurseWorkWeek week) {
+        final Nurse n = week.getNurse();
+        final int totalAssignments = week.countAssignedDays() + n.getNumPreviousAssignments();
+        final int minAllowedAssignments = n.getContract().getMinAssignments();
+        final int maxAllowedAssignments = n.getContract().getMaxAssignments();
+        if (totalAssignments > maxAllowedAssignments) {
+            return totalAssignments - maxAllowedAssignments;
+        } else if (minAllowedAssignments > totalAssignments) {
+            /*
+             * as the assignments increase towards the minimum allowed, this penalty will have a decreasing
+             * tendency; therefore we need to invert it on this interval.
+             */
+            return totalAssignments - minAllowedAssignments;
+        } else {
+            return 0;
+        }
+    }
+
+    public static int countBreaksInSuccession(final NurseWorkWeek week, final DayOfWeek day) {
+        if (week.isOverbooked(day)) {
+            if (day == DayOfWeek.SUNDAY) {
+                return 1; // succession only broken towards saturday
+            } else {
+                return 2; // succession in both ways is broken
+            }
+        }
+        int total = 0;
+        final ShiftType currentShift = week.getShiftType(day);
+        final DayOfWeek previousDay = day.getPrevious();
+        if (previousDay == null) {
+            final ShiftType previousShift = week.getNurse().getPreviousAssignedShiftType();
+            if (previousShift != null && !previousShift.isAllowedBefore(currentShift)) {
+                total++;
+            }
+        } else if (week.isOverbooked(previousDay)) {
+            total++;
+        } else {
+            final ShiftType previousShift = week.getShiftType(previousDay);
+            if (previousShift != null && !previousShift.isAllowedBefore(currentShift)) {
+                total++;
+            }
+        }
+        final DayOfWeek nextDay = day.getNext();
+        if (nextDay == null) {
+            // nothing; there is nothing after sunday
+        } else if (week.isOverbooked(nextDay)) {
+            total++;
+        } else {
+            final ShiftType nextShift = week.getShiftType(nextDay);
+            if (nextShift != null && !nextShift.isAllowedAfter(currentShift)) {
+                total++;
+            }
+        }
+        return total;
+    }
+
+    private static final int countWeekendsOutsideBounds(final NurseWorkWeek week) {
+        final Nurse n = week.getNurse();
+        final int previousWorkingWeekends = n.getNumPreviousWorkingWeekends();
+        final int maxAllowedWorkingWeekends = n.getContract().getMaxWorkingWeekends();
+        final boolean hasWorkingWeekend = week.isOccupied(DayOfWeek.SATURDAY) || week.isOccupied(DayOfWeek.SUNDAY);
+        final int totalWorkingWeekendCount = hasWorkingWeekend ? previousWorkingWeekends + 1 : previousWorkingWeekends;
+        return Math.max(0, totalWorkingWeekendCount - maxAllowedWorkingWeekends);
+    }
+
+    private static final boolean hasCompleteWeekend(final NurseWorkWeek week) {
+        if (!week.getNurse().getContract().isCompleteWeekends()) {
+            return true;
+        }
+        final boolean saturday = week.isOccupied(DayOfWeek.SATURDAY);
+        final boolean sunday = week.isOccupied(DayOfWeek.SUNDAY);
+        if (saturday && sunday) {
+            return true;
+        } else if (!saturday && !sunday) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private int assignmentsOutOfBoundsCount = 0;
+    private int consecutiveDayOffViolationsCount = 0;
+    private int consecutiveShiftTypeViolationsCount = 0;
+    private int consecutiveWorkingDayViolationsCount = 0;
+    private int ignoredShiftOffRequestCount = 0;
     private int incompleteWeekendsCount = 0;
-    private final Map<Nurse, SuccessionTracker> nurses = new HashMap<Nurse, SuccessionTracker>();
-    private int totalAssignments = 0;
-    private int totalAssignmentsOutOfBounds = 0;
-    private int totalConsecutiveDayOffViolations = 0;
-    private int totalConsecutiveShiftTypeViolations = 0;
-    private int totalConsecutiveWorkingDayViolations = 0;
-    private int totalInvalidShiftSuccessions = 0;
-    private int totalWeekendsOverLimit = 0;
+    private int invalidShiftSuccessionCount = 0;
+    private int overbookedNurseCount = 0;
+    private int weekendsOverLimitCount = 0;
+    private final Map<Nurse, NurseWorkWeek> workWeeks;
 
     public NurseTracker(final Roster r) {
-        this.totalConsecutiveDayOffViolations = r.getConsecutiveDayOffViolationsForUnusedNurses();
+        this.workWeeks = new HashMap<Nurse, NurseWorkWeek>(r.getNurses().size());
+        /*
+         * some nurses may never be assigned to any shift and will therefore never pass through this class. for this
+         * case, we're doing the following. otherwise, days off for such nurses would not be penalized.
+         */
+        this.consecutiveDayOffViolationsCount = r.getMaximumPenaltyForConsecutiveDaysOff();
     }
 
     public void add(final Shift shift) {
-        if (shift.getSkill() == null) { // nurse is not actually assigned
+        final Nurse nurse = shift.getNurse();
+        if (nurse == null) {
             return;
         }
-        final SuccessionTracker t = this.forNurse(shift.getNurse());
+        final NurseWorkWeek week = this.getWorkWeek(nurse);
+        this.assignmentsOutOfBoundsCount -= NurseTracker.countAssignmentsOutOfBounds(week);
         // only for weekends
         final boolean isWeekend = shift.getDay().isWeekend();
         boolean wasCompleteWeekend = false;
         if (isWeekend) {
-            wasCompleteWeekend = t.hasCompleteWeekend();
-            this.totalWeekendsOverLimit -= t.countWeekendsOutsideBounds();
+            wasCompleteWeekend = NurseTracker.hasCompleteWeekend(week);
+            this.weekendsOverLimitCount -= NurseTracker.countWeekendsOutsideBounds(week);
         }
-        // and the rest
-        this.totalInvalidShiftSuccessions -= t.countBrokenSuccessions();
-        this.totalAssignments -= t.countAssignments();
-        this.totalAssignmentsOutOfBounds -= t.countAssignmentsOutsideBounds();
-        this.totalConsecutiveWorkingDayViolations -= t.countConsecutiveWorkingDayViolations();
-        this.totalConsecutiveShiftTypeViolations -= t.countConsecutiveShiftTypeViolations();
-        this.totalConsecutiveDayOffViolations -= t.countConsecutiveDayOffViolations();
-        t.add(shift); // actualy preform the operation
-        this.totalConsecutiveDayOffViolations += t.countConsecutiveDayOffViolations();
-        this.totalConsecutiveShiftTypeViolations += t.countConsecutiveShiftTypeViolations();
-        this.totalConsecutiveWorkingDayViolations += t.countConsecutiveWorkingDayViolations();
-        this.totalAssignmentsOutOfBounds += t.countAssignmentsOutsideBounds();
-        this.totalAssignments += t.countAssignments();
+        final DayOfWeek day = shift.getDay();
+        final boolean wasOverbooked = week.isOverbooked(day);
+        this.invalidShiftSuccessionCount -= NurseTracker.countBreaksInSuccession(week, day);
+        this.consecutiveDayOffViolationsCount -= SuccessionEvaluator.countConsecutiveDayOffViolations(week);
+        this.consecutiveWorkingDayViolationsCount -= SuccessionEvaluator.countConsecutiveWorkingDayViolations(week);
+        this.consecutiveShiftTypeViolationsCount -= SuccessionEvaluator.countConsecutiveShiftTypeViolations(week);
+        week.addShiftType(day, shift.getShiftType());
+        this.consecutiveShiftTypeViolationsCount += SuccessionEvaluator.countConsecutiveShiftTypeViolations(week);
+        this.consecutiveWorkingDayViolationsCount += SuccessionEvaluator.countConsecutiveWorkingDayViolations(week);
+        this.consecutiveDayOffViolationsCount += SuccessionEvaluator.countConsecutiveDayOffViolations(week);
+        this.invalidShiftSuccessionCount += NurseTracker.countBreaksInSuccession(week, day);
+        final boolean isOverbooked = week.isOverbooked(day);
+        if (isOverbooked && !wasOverbooked) {
+            this.overbookedNurseCount++;
+        }
+        this.assignmentsOutOfBoundsCount += NurseTracker.countAssignmentsOutOfBounds(week);
         if (isWeekend) { // only for weekends
-            this.totalWeekendsOverLimit += t.countWeekendsOutsideBounds();
-            final boolean isCompleteWeekend = t.hasCompleteWeekend();
+            this.weekendsOverLimitCount += NurseTracker.countWeekendsOutsideBounds(week);
+            final boolean isCompleteWeekend = NurseTracker.hasCompleteWeekend(week);
             if (isCompleteWeekend && !wasCompleteWeekend) {
                 this.incompleteWeekendsCount -= 1;
             } else if (!isCompleteWeekend && wasCompleteWeekend) {
                 this.incompleteWeekendsCount += 1;
             }
         }
-        this.totalInvalidShiftSuccessions += t.countBrokenSuccessions();
-        // determine preference penalty
-        if (shift.getShiftType() != null && !shift.isDesired()) {
-            this.ignoredShiftPreferenceCount += 1;
+        if (nurse.shiftOffRequested(day, shift.getShiftType())) {
+            this.ignoredShiftOffRequestCount++;
         }
     }
 
-    public int countTotalAssignment() {
-        return this.totalAssignments;
-    }
-
     public int countAssignmentsOutOfBounds() {
-        return this.totalAssignmentsOutOfBounds;
+        return this.assignmentsOutOfBoundsCount;
     }
 
     public int countConsecutiveDayOffViolations() {
-        return this.totalConsecutiveDayOffViolations;
+        return this.consecutiveDayOffViolationsCount;
     }
 
     public int countConsecutiveShiftTypeViolations() {
-        return this.totalConsecutiveShiftTypeViolations;
+        return this.consecutiveShiftTypeViolationsCount;
     }
 
     public int countConsecutiveWorkingDayViolations() {
-        return this.totalConsecutiveWorkingDayViolations;
+        return this.consecutiveWorkingDayViolationsCount;
     }
 
     public int countIgnoredShiftPreferences() {
-        return this.ignoredShiftPreferenceCount;
+        return this.ignoredShiftOffRequestCount;
     }
 
     public int countIncompleteWeekends() {
@@ -95,120 +181,73 @@ public class NurseTracker {
     }
 
     public int countInvalidShiftSuccessions() {
-        return this.totalInvalidShiftSuccessions;
+        return this.invalidShiftSuccessionCount;
+    }
+
+    public int countOverbookedNurses() {
+        return this.overbookedNurseCount;
     }
 
     public int countWeekendsOutOfBounds() {
-        return this.totalWeekendsOverLimit;
+        return this.weekendsOverLimitCount;
     }
 
-    private SuccessionTracker forNurse(final Nurse n) {
-        SuccessionTracker pnt = this.nurses.get(n);
-        if (pnt == null) {
-            pnt = new SuccessionTracker(n);
-            this.nurses.put(n, pnt);
+    private NurseWorkWeek getWorkWeek(final Nurse n) {
+        if (n == null) { // defensive programming
+            throw new IllegalArgumentException("Cannot operate on null nurses.");
         }
-        return pnt;
+        NurseWorkWeek w = this.workWeeks.get(n);
+        if (w == null) {
+            w = new NurseWorkWeek(n);
+            this.workWeeks.put(n, w);
+        }
+        return w;
     }
 
-    public void changeShiftType(final Shift shift, final ShiftType previous) {
-        if (shift.getSkill() == null) { // nurse is not actually assigned
-            return;
-        }
-        final SuccessionTracker t = this.forNurse(shift.getNurse());
-        // only for weekends
-        final boolean isWeekend = shift.getDay().isWeekend();
-        boolean wasCompleteWeekend = false;
-        if (isWeekend) {
-            wasCompleteWeekend = t.hasCompleteWeekend();
-            this.totalWeekendsOverLimit -= t.countWeekendsOutsideBounds();
-        }
-        // and the rest
-        this.totalInvalidShiftSuccessions -= t.countBrokenSuccessions();
-        this.totalAssignments -= t.countAssignments();
-        this.totalAssignmentsOutOfBounds -= t.countAssignmentsOutsideBounds();
-        this.totalConsecutiveWorkingDayViolations -= t.countConsecutiveWorkingDayViolations();
-        this.totalConsecutiveShiftTypeViolations -= t.countConsecutiveShiftTypeViolations();
-        this.totalConsecutiveDayOffViolations -= t.countConsecutiveDayOffViolations();
-        t.changeShiftType(shift, previous);
-        this.totalConsecutiveDayOffViolations += t.countConsecutiveDayOffViolations();
-        this.totalConsecutiveShiftTypeViolations += t.countConsecutiveShiftTypeViolations();
-        this.totalConsecutiveWorkingDayViolations += t.countConsecutiveWorkingDayViolations();
-        this.totalAssignmentsOutOfBounds += t.countAssignmentsOutsideBounds();
-        this.totalAssignments += t.countAssignments();
-        this.totalInvalidShiftSuccessions += t.countBrokenSuccessions();
-        // determine preference penalty
-        if (previous != null && !shift.isDesired(previous)) {
-            this.ignoredShiftPreferenceCount -= 1;
-        }
-        if (shift.getShiftType() != null && !shift.isDesired()) {
-            this.ignoredShiftPreferenceCount += 1;
-        }
-        if (isWeekend) { // only for weekends
-            this.totalWeekendsOverLimit += t.countWeekendsOutsideBounds();
-            final boolean isCompleteWeekend = t.hasCompleteWeekend();
-            if (isCompleteWeekend && !wasCompleteWeekend) {
-                this.incompleteWeekendsCount -= 1;
-            } else if (!isCompleteWeekend && wasCompleteWeekend) {
-                this.incompleteWeekendsCount += 1;
-            }
-        }
-    }
-
-    /**
-     * Remove a nurse that is assigned to a shift.
-     *
-     */
     public void remove(final Shift shift) {
-        this.remove(shift, false);
+        this.remove(shift, shift.getNurse());
     }
 
-    /**
-     * Remove a nurse.
-     *
-     * @param shift
-     * @param force
-     *            If true, nurse will be removed even when it is not assigned to a shift. This is necessary, as when
-     *            unsetting the skill, it will have already been null at the time of reaching this method.
-     */
-    public void remove(final Shift shift, final boolean force) {
-        if (!force && shift.getSkill() == null) { // nurse is not actually assigned
+    public void remove(final Shift shift, final Nurse nurse) {
+        if (nurse == null) {
             return;
         }
-        final SuccessionTracker t = this.forNurse(shift.getNurse());
+        final NurseWorkWeek week = this.getWorkWeek(nurse);
+        this.assignmentsOutOfBoundsCount -= NurseTracker.countAssignmentsOutOfBounds(week);
         // only for weekends
         final boolean isWeekend = shift.getDay().isWeekend();
         boolean wasCompleteWeekend = false;
         if (isWeekend) {
-            wasCompleteWeekend = t.hasCompleteWeekend();
-            this.totalWeekendsOverLimit -= t.countWeekendsOutsideBounds();
+            wasCompleteWeekend = NurseTracker.hasCompleteWeekend(week);
+            this.weekendsOverLimitCount -= NurseTracker.countWeekendsOutsideBounds(week);
         }
-        // and the rest
-        this.totalInvalidShiftSuccessions -= t.countBrokenSuccessions();
-        this.totalAssignments -= t.countAssignments();
-        this.totalAssignmentsOutOfBounds -= t.countAssignmentsOutsideBounds();
-        this.totalConsecutiveWorkingDayViolations -= t.countConsecutiveWorkingDayViolations();
-        this.totalConsecutiveShiftTypeViolations -= t.countConsecutiveShiftTypeViolations();
-        this.totalConsecutiveDayOffViolations -= t.countConsecutiveDayOffViolations();
-        t.remove(shift);
-        this.totalConsecutiveDayOffViolations += t.countConsecutiveDayOffViolations();
-        this.totalConsecutiveShiftTypeViolations += t.countConsecutiveShiftTypeViolations();
-        this.totalConsecutiveWorkingDayViolations += t.countConsecutiveWorkingDayViolations();
-        this.totalAssignmentsOutOfBounds += t.countAssignmentsOutsideBounds();
-        this.totalAssignments += t.countAssignments();
-        this.totalInvalidShiftSuccessions += t.countBrokenSuccessions();
-        // determine preference penalty
-        if (shift.getShiftType() != null && !shift.isDesired()) {
-            this.ignoredShiftPreferenceCount -= 1;
+        final DayOfWeek day = shift.getDay();
+        final boolean wasOverbooked = week.isOverbooked(day);
+        this.invalidShiftSuccessionCount -= NurseTracker.countBreaksInSuccession(week, day);
+        this.consecutiveDayOffViolationsCount -= SuccessionEvaluator.countConsecutiveDayOffViolations(week);
+        this.consecutiveWorkingDayViolationsCount -= SuccessionEvaluator.countConsecutiveWorkingDayViolations(week);
+        this.consecutiveShiftTypeViolationsCount -= SuccessionEvaluator.countConsecutiveShiftTypeViolations(week);
+        week.removeShiftType(day, shift.getShiftType());
+        this.consecutiveShiftTypeViolationsCount += SuccessionEvaluator.countConsecutiveShiftTypeViolations(week);
+        this.consecutiveWorkingDayViolationsCount += SuccessionEvaluator.countConsecutiveWorkingDayViolations(week);
+        this.consecutiveDayOffViolationsCount += SuccessionEvaluator.countConsecutiveDayOffViolations(week);
+        this.invalidShiftSuccessionCount += NurseTracker.countBreaksInSuccession(week, day);
+        final boolean isOverbooked = week.isOverbooked(day);
+        if (wasOverbooked && !isOverbooked) {
+            this.overbookedNurseCount--;
         }
+        this.assignmentsOutOfBoundsCount += NurseTracker.countAssignmentsOutOfBounds(week);
         if (isWeekend) { // only for weekends
-            this.totalWeekendsOverLimit += t.countWeekendsOutsideBounds();
-            final boolean isCompleteWeekend = t.hasCompleteWeekend();
+            this.weekendsOverLimitCount += NurseTracker.countWeekendsOutsideBounds(week);
+            final boolean isCompleteWeekend = NurseTracker.hasCompleteWeekend(week);
             if (isCompleteWeekend && !wasCompleteWeekend) {
                 this.incompleteWeekendsCount -= 1;
             } else if (!isCompleteWeekend && wasCompleteWeekend) {
                 this.incompleteWeekendsCount += 1;
             }
+        }
+        if (nurse.shiftOffRequested(day, shift.getShiftType())) {
+            this.ignoredShiftOffRequestCount--;
         }
     }
 

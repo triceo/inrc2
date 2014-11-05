@@ -18,6 +18,7 @@ import org.optaplanner.core.impl.solver.DefaultSolver;
 import org.optaplanner.core.impl.solver.random.DefaultRandomFactory;
 import org.optaplanner.examples.inrc2.domain.Roster;
 import org.optaplanner.examples.inrc2.io.Inrc2SolutionFileIO;
+import org.optaplanner.examples.inrc2.solver.score.Inrc2IncrementalScoreCalculator;
 import org.optaplanner.persistence.common.api.domain.solution.SolutionFileIO;
 
 public class Main {
@@ -105,6 +106,10 @@ public class Main {
         solver.solve(roster);
         final Roster bestSolution = (Roster) solver.getBestSolution();
         System.out.println("Score achieved: " + bestSolution.getScore());
+        // analyze the score
+        final Inrc2IncrementalScoreCalculator calc = new Inrc2IncrementalScoreCalculator();
+        calc.resetWorkingSolution(bestSolution);
+        calc.calculateScoreWithOutput();
 
         // write the solution
         final File tempSolutionFile = new File(plannerTempFolder, Inrc2SolutionFileIO.SOLUTION_FILENAME);

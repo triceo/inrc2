@@ -6,8 +6,6 @@ import org.apache.commons.math3.util.Pair;
 
 public class Requirement {
 
-    private final boolean[] isRequiredOn = new boolean[7];
-
     private final int[] minimalRequirement = new int[7];
 
     private final int[] optimalRequirement = new int[7];
@@ -22,24 +20,13 @@ public class Requirement {
         }
         this.shiftType = shiftType;
         this.skill = skill;
-        this.minimalRequirement[DayOfWeek.MONDAY.getNumber()] = monday.getFirst();
-        this.minimalRequirement[DayOfWeek.TUESDAY.getNumber()] = tuesday.getFirst();
-        this.minimalRequirement[DayOfWeek.WEDNESDAY.getNumber()] = wednesday.getFirst();
-        this.minimalRequirement[DayOfWeek.THURSDAY.getNumber()] = thursday.getFirst();
-        this.minimalRequirement[DayOfWeek.FRIDAY.getNumber()] = friday.getFirst();
-        this.minimalRequirement[DayOfWeek.SATURDAY.getNumber()] = saturday.getFirst();
-        this.minimalRequirement[DayOfWeek.SUNDAY.getNumber()] = sunday.getFirst();
-        this.optimalRequirement[DayOfWeek.MONDAY.getNumber()] = monday.getSecond();
-        this.optimalRequirement[DayOfWeek.TUESDAY.getNumber()] = tuesday.getSecond();
-        this.optimalRequirement[DayOfWeek.WEDNESDAY.getNumber()] = wednesday.getSecond();
-        this.optimalRequirement[DayOfWeek.THURSDAY.getNumber()] = thursday.getSecond();
-        this.optimalRequirement[DayOfWeek.FRIDAY.getNumber()] = friday.getSecond();
-        this.optimalRequirement[DayOfWeek.SATURDAY.getNumber()] = saturday.getSecond();
-        this.optimalRequirement[DayOfWeek.FRIDAY.getNumber()] = sunday.getSecond();
-        for (final DayOfWeek d : DayOfWeek.values()) {
-            final int num = d.getNumber();
-            this.isRequiredOn[num] = (this.minimalRequirement[num] > 0) || (this.optimalRequirement[num] > 0);
-        }
+        this.setRequirement(DayOfWeek.MONDAY, monday);
+        this.setRequirement(DayOfWeek.TUESDAY, tuesday);
+        this.setRequirement(DayOfWeek.WEDNESDAY, wednesday);
+        this.setRequirement(DayOfWeek.THURSDAY, thursday);
+        this.setRequirement(DayOfWeek.FRIDAY, friday);
+        this.setRequirement(DayOfWeek.SATURDAY, saturday);
+        this.setRequirement(DayOfWeek.SUNDAY, sunday);
     }
 
     public int getMinimal(final DayOfWeek d) {
@@ -58,8 +45,9 @@ public class Requirement {
         return this.skill;
     }
 
-    public boolean isRequired(final DayOfWeek d) {
-        return this.isRequiredOn[d.getNumber()];
+    private void setRequirement(final DayOfWeek day, final Pair<Integer, Integer> data) {
+        this.minimalRequirement[day.getNumber()] = data.getFirst();
+        this.optimalRequirement[day.getNumber()] = data.getSecond();
     }
 
     @Override

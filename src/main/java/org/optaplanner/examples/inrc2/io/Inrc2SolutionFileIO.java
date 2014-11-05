@@ -12,7 +12,7 @@ import java.util.SortedMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.math3.util.Pair;
 import org.optaplanner.core.api.domain.solution.Solution;
-import org.optaplanner.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
+import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
 import org.optaplanner.examples.inrc2.domain.Roster;
 import org.optaplanner.examples.inrc2.domain.Shift;
 import org.optaplanner.examples.inrc2.domain.ShiftType;
@@ -39,7 +39,7 @@ public class Inrc2SolutionFileIO implements SolutionFileIO {
     }
 
     @Override
-    public Solution<HardMediumSoftScore> read(final File arg0) {
+    public Solution<HardSoftScore> read(final File arg0) {
         final File scenario = new File(arg0, Inrc2SolutionFileIO.SCENARIO_FILENAME);
         final File history = new File(arg0, Inrc2SolutionFileIO.HISTORY_FILENAME);
         final File week = new File(arg0, Inrc2SolutionFileIO.WEEK_DATA_FILENAME);
@@ -63,8 +63,7 @@ public class Inrc2SolutionFileIO implements SolutionFileIO {
         final Map<ShiftType, Map<Skill, Set<Shift>>> ordered = new LinkedHashMap<ShiftType, Map<Skill, Set<Shift>>>();
         int total = 0;
         for (final Shift s : r.getShifts()) { // sort the assignments so that the solutions are human-readable
-            final Skill skill = s.getSkill();
-            if (skill == null) { // nurse not assigned to anything
+            if (s.getNurse() == null) {
                 continue;
             }
             final ShiftType st = s.getShiftType();
@@ -72,6 +71,7 @@ public class Inrc2SolutionFileIO implements SolutionFileIO {
                 ordered.put(st, new LinkedHashMap<Skill, Set<Shift>>());
             }
             final Map<Skill, Set<Shift>> subordered = ordered.get(st);
+            final Skill skill = s.getSkill();
             if (!subordered.containsKey(skill)) {
                 subordered.put(skill, new LinkedHashSet<Shift>());
             }

@@ -1,11 +1,10 @@
 package org.optaplanner.examples.inrc2.solver.score;
 
-import org.optaplanner.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
+import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
 import org.optaplanner.core.impl.score.director.incremental.IncrementalScoreCalculator;
+import org.optaplanner.examples.inrc2.domain.Nurse;
 import org.optaplanner.examples.inrc2.domain.Roster;
 import org.optaplanner.examples.inrc2.domain.Shift;
-import org.optaplanner.examples.inrc2.domain.ShiftType;
-import org.optaplanner.examples.inrc2.domain.Skill;
 
 public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculator<Roster> {
 
@@ -19,8 +18,7 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
     private static final int WORKING_WEEKENDS_WEIGHT = 30;
 
     private NurseTracker nurseTracker;
-    private ShiftType previousShiftType;
-    private Skill previousSkill;
+    private Nurse previousNurse;
 
     private StaffingTracker staffingTracker;
 
@@ -42,27 +40,15 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
     @Override
     public void afterVariableChanged(final Object entity, final String variableName) {
         final Shift shift = (Shift) entity;
-        if (variableName.equals("skill")) {
-            final Skill currentSkill = shift.getSkill();
-            if (this.previousSkill == null) {
-                this.onSkillSet(shift);
-            } else if (currentSkill == null) {
-                this.onSkillUnset(shift, this.previousSkill);
-            } else {
-                this.onSkillUpdated(shift, this.previousSkill);
-            }
-        } else if (variableName.equals("shiftType")) {
-            final ShiftType currentShiftType = shift.getShiftType();
-            if (this.previousShiftType == null) {
-                this.onShiftTypeSet(shift);
-            } else if (currentShiftType == null) {
-                this.onShiftTypeUnset(shift, this.previousShiftType);
-            } else {
-                this.onShiftTypeUpdated(shift, this.previousShiftType);
-            }
+        final Nurse currentNurse = shift.getNurse();
+        if (this.previousNurse == null) {
+            this.onNurseSet(shift);
+        } else if (currentNurse == null) {
+            this.onNurseUnset(shift, this.previousNurse);
+        } else {
+            this.onNurseUpdated(shift, this.previousNurse);
         }
-        this.previousSkill = null;
-        this.previousShiftType = null;
+        this.previousNurse = null;
     }
 
     @Override
@@ -78,15 +64,15 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
     @Override
     public void beforeVariableChanged(final Object entity, final String variableName) {
         final Shift shift = (Shift) entity;
-        this.previousShiftType = shift.getShiftType();
-        this.previousSkill = shift.getSkill();
+        this.previousNurse = shift.getNurse();
     }
 
     @Override
-    public HardMediumSoftScore calculateScore() {
+    public HardSoftScore calculateScore() {
         final int hard = -(this.nurseTracker.countInvalidShiftSuccessions() +
-                this.staffingTracker.countNursesMissingFromMinimal());
-        final int medium = -(this.nurseTracker.countIgnoredShiftPreferences() * Inrc2IncrementalScoreCalculator.PREFERENCE_WEIGHT +
+                this.staffingTracker.countNursesMissingFromMinimal() +
+                this.nurseTracker.countOverbookedNurses());
+        final int soft = -(this.nurseTracker.countIgnoredShiftPreferences() * Inrc2IncrementalScoreCalculator.PREFERENCE_WEIGHT +
                 this.nurseTracker.countIncompleteWeekends() * Inrc2IncrementalScoreCalculator.COMPLETE_WEEKENDS_WEIGHT +
                 this.nurseTracker.countWeekendsOutOfBounds() * Inrc2IncrementalScoreCalculator.WORKING_WEEKENDS_WEIGHT +
                 this.nurseTracker.countAssignmentsOutOfBounds() * Inrc2IncrementalScoreCalculator.TOTAL_ASSIGNMENTS_WEIGHT +
@@ -94,38 +80,37 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
                 this.nurseTracker.countConsecutiveWorkingDayViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_DAYS_ON_WEIGHT +
                 this.nurseTracker.countConsecutiveShiftTypeViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_SHIFTS_WEIGHT +
                 this.nurseTracker.countConsecutiveDayOffViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_DAYS_OFF_WEIGHT);
-        // if we can achieve the above with less nurses, the better
-        final int soft = -(this.nurseTracker.countTotalAssignment());
-        return HardMediumSoftScore.valueOf(hard, medium, soft);
+        return HardSoftScore.valueOf(hard, soft);
     }
 
-    private void onShiftTypeSet(final Shift entity) {
-        this.nurseTracker.changeShiftType(entity, null);
-        this.staffingTracker.changeShiftType(entity, null);
+    public HardSoftScore calculateScoreWithOutput() {
+        System.out.println("Illegal shift type succession constraints: " + this.nurseTracker.countInvalidShiftSuccessions());
+        System.out.println("Minimal coverage constraints:              " + this.staffingTracker.countNursesMissingFromMinimal());
+        System.out.println("Total assignment constraints:              " + this.nurseTracker.countAssignmentsOutOfBounds() * Inrc2IncrementalScoreCalculator.TOTAL_ASSIGNMENTS_WEIGHT);
+        System.out.println("Consecutive constraints:                   " + (this.nurseTracker.countConsecutiveWorkingDayViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_DAYS_ON_WEIGHT + this.nurseTracker.countConsecutiveShiftTypeViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_SHIFTS_WEIGHT));
+        System.out.println("Non working days constraints:              " + this.nurseTracker.countConsecutiveDayOffViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_DAYS_OFF_WEIGHT);
+        System.out.println("Preferences:                               " + this.nurseTracker.countIgnoredShiftPreferences() * Inrc2IncrementalScoreCalculator.PREFERENCE_WEIGHT);
+        System.out.println("Max working weekend:                       " + this.nurseTracker.countWeekendsOutOfBounds() * Inrc2IncrementalScoreCalculator.WORKING_WEEKENDS_WEIGHT);
+        System.out.println("Complete weekends:                         " + this.nurseTracker.countIncompleteWeekends() * Inrc2IncrementalScoreCalculator.COMPLETE_WEEKENDS_WEIGHT);
+        System.out.println("Optimal coverage constraints:              " + this.staffingTracker.countNursesMissingFromOptimal() * Inrc2IncrementalScoreCalculator.SUBOMPTIMAL_WEIGHT);
+        return this.calculateScore();
     }
 
-    private void onShiftTypeUnset(final Shift entity, final ShiftType previous) {
-        this.nurseTracker.changeShiftType(entity, previous);
-        this.staffingTracker.changeShiftType(entity, previous);
-    }
-
-    private void onShiftTypeUpdated(final Shift entity, final ShiftType previous) {
-        this.nurseTracker.changeShiftType(entity, previous);
-        this.staffingTracker.changeShiftType(entity, previous);
-    }
-
-    private void onSkillSet(final Shift entity) {
+    private void onNurseSet(final Shift entity) {
         this.nurseTracker.add(entity); // nurse has been assigned
         this.staffingTracker.add(entity);
     }
 
-    private void onSkillUnset(final Shift entity, final Skill previous) {
-        this.nurseTracker.remove(entity, true); // nurse has been unassigned
+    private void onNurseUnset(final Shift entity, final Nurse previous) {
+        this.nurseTracker.remove(entity, previous); // nurse has been unassigned
         this.staffingTracker.remove(entity, previous);
     }
 
-    private void onSkillUpdated(final Shift entity, final Skill previous) {
-        this.staffingTracker.changeSkill(entity, previous);
+    private void onNurseUpdated(final Shift entity, final Nurse previous) {
+        this.nurseTracker.remove(entity, previous);
+        this.nurseTracker.add(entity);
+        this.staffingTracker.remove(entity, previous);
+        this.staffingTracker.add(entity);
     }
 
     private void removeShift(final Shift entity) {

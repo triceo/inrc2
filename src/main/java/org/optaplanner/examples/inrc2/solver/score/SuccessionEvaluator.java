@@ -1,6 +1,12 @@
 package org.optaplanner.examples.inrc2.solver.score;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.math3.util.Pair;
+import org.optaplanner.examples.inrc2.domain.Contract;
 import org.optaplanner.examples.inrc2.domain.DayOfWeek;
+import org.optaplanner.examples.inrc2.domain.Nurse;
 import org.optaplanner.examples.inrc2.domain.ShiftType;
 
 public class SuccessionEvaluator {
@@ -11,88 +17,122 @@ public class SuccessionEvaluator {
 
     }
 
-    public static int countConsecutiveDayOffViolations(final ShiftType[] successions, final int historical, final int minAllowed, final int maxAllowed) {
-        return -SuccessionEvaluator.countConsecutiveViolations(new ConsecutionBreakingCriteria() {
-
-            @Override
-            public boolean breaks(final ShiftType current, final ShiftType previous) {
-                return current != null;
-            }
-        }, successions, historical, minAllowed, maxAllowed);
-    }
-
-    public static int countConsecutiveShiftTypeViolations(final ShiftType[] successions, final int historical, final int minAllowed, final int maxAllowed) {
-        return SuccessionEvaluator.countConsecutiveViolations(new ConsecutionBreakingCriteria() {
-
-            @Override
-            public boolean breaks(final ShiftType current, final ShiftType previous) {
-                return current == null || current != previous;
-            }
-        }, successions, historical, minAllowed, maxAllowed);
-    }
-
-    private static int countConsecutiveViolations(final ConsecutionBreakingCriteria criteria, final ShiftType[] successions, final int historical, final int minAllowed, final int maxAllowed) {
-        final int sundayIndex = SuccessionTracker.getDayIndex(DayOfWeek.SUNDAY);
+    public static int countConsecutiveDayOffViolations(final NurseWorkWeek week) {
+        final Nurse nurse = week.getNurse();
+        final int consecutiveBefore = nurse.getNumPreviousConsecutiveDaysOff();
+        final Contract contract = nurse.getContract();
+        final int minConsecutive = contract.getMinConsecutiveDaysOff();
+        final int maxConsecutive = contract.getMaxConsecutiveDaysOff();
         int totalViolations = 0;
-        // left boundary
-        int consecutiveOnTheLeft = historical;
-        int firstUnseen = SuccessionTracker.getDayIndex(DayOfWeek.MONDAY);
-        ShiftType previous = successions[firstUnseen - 1];
-        ShiftType unseen = successions[firstUnseen];
-        if (criteria.breaks(unseen, previous)) {
-            // cancel all the previous days
-            consecutiveOnTheLeft = 0;
-            firstUnseen += 1;
-        } else {
-            // go on for as long as there are shifts
-            while (!criteria.breaks(unseen, previous) && firstUnseen <= sundayIndex) {
-                consecutiveOnTheLeft += 1;
-                firstUnseen += 1;
-                previous = unseen;
-                unseen = successions[firstUnseen];
+        final List<Pair<ShiftType, Integer>> chunks = SuccessionEvaluator.tokenize(week, week.getNurse().getPreviousAssignedShiftType(), consecutiveBefore);
+        for (int i = 0; i < chunks.size(); i++) {
+            final Pair<ShiftType, Integer> chunk = chunks.get(i);
+            final ShiftType type = chunk.getFirst();
+            if (type != null) { // not a day off
+                continue;
             }
-        }
-        if (consecutiveOnTheLeft < minAllowed) {
-            if (consecutiveOnTheLeft > 0) {
-                totalViolations += Math.min(consecutiveOnTheLeft - historical, minAllowed - consecutiveOnTheLeft);
-            }
-        } else if (consecutiveOnTheLeft > maxAllowed) {
-            totalViolations += Math.min(consecutiveOnTheLeft - historical, consecutiveOnTheLeft - maxAllowed);
-        }
-        // and the rest of the week
-        int consecutive = 0;
-        for (int i = firstUnseen; i <= sundayIndex; i++) {
-            final ShiftType prev = successions[i - 1];
-            final ShiftType current = successions[i];
-            if (criteria.breaks(current, prev)) {
-                // consecutive chain is broken
-                if (consecutive > 0) {
-                    if (consecutive > maxAllowed) {
-                        totalViolations += consecutive - maxAllowed;
-                    } else if (consecutive < minAllowed) {
-                        totalViolations += minAllowed - consecutive;
-                    }
-                    consecutive = 0;
-                } else {
-                    // 0 consecutive means that both this and previous were null; nothing to do
-                }
+            final int consecutives = chunk.getSecond();
+            if (i == 0) {
+                totalViolations += SuccessionEvaluator.countViolations(consecutiveBefore, consecutives, minConsecutive, maxConsecutive);
             } else {
-                consecutive++;
+                totalViolations += SuccessionEvaluator.countViolations(consecutives, minConsecutive, maxConsecutive);
             }
-        }
-        if (totalViolations < 0) {
-            throw new IllegalStateException("This should not be happening.");
         }
         return totalViolations;
     }
 
-    public static int countConsecutiveWorkingDayViolations(final ShiftType[] successions, final int historical, final int minAllowed, final int maxAllowed) {
-        return SuccessionEvaluator.countConsecutiveViolations(new ConsecutionBreakingCriteria() {
-
-            @Override
-            public boolean breaks(final ShiftType current, final ShiftType previous) {
-                return current == null;
+    public static int countConsecutiveShiftTypeViolations(final NurseWorkWeek week) {
+        final int consecutiveBefore = week.getNurse().getNumPreviousConsecutiveAssignmentsOfSameShiftType();
+        int totalViolations = 0;
+        final List<Pair<ShiftType, Integer>> chunks = SuccessionEvaluator.tokenize(week, week.getNurse().getPreviousAssignedShiftType(), consecutiveBefore);
+        for (int i = 0; i < chunks.size(); i++) {
+            final Pair<ShiftType, Integer> chunk = chunks.get(i);
+            final ShiftType type = chunk.getFirst();
+            if (type == null) {
+                continue;
             }
-        }, successions, historical, minAllowed, maxAllowed);
+            final int consecutives = chunk.getSecond();
+            final int minConsecutive = type.getMinConsecutiveAssignments();
+            final int maxConsecutive = type.getMaxConsecutiveAssignments();
+            if (i == 0) {
+                totalViolations += SuccessionEvaluator.countViolations(consecutiveBefore, consecutives, minConsecutive, maxConsecutive);
+            } else {
+                totalViolations += SuccessionEvaluator.countViolations(consecutives, minConsecutive, maxConsecutive);
+            }
+        }
+        return totalViolations;
     }
+
+    public static int countConsecutiveWorkingDayViolations(final NurseWorkWeek week) {
+        final Nurse nurse = week.getNurse();
+        final int consecutiveBefore = nurse.getNumPreviousConsecutiveDaysOn();
+        final Contract contract = nurse.getContract();
+        final int minConsecutive = contract.getMinConsecutiveDaysOn();
+        final int maxConsecutive = contract.getMaxConsecutiveDaysOn();
+        int consecutives = 0;
+        int totalViolations = 0;
+        final List<Pair<ShiftType, Integer>> chunks = SuccessionEvaluator.tokenize(week, week.getNurse().getPreviousAssignedShiftType(), consecutiveBefore);
+        chunks.add(new Pair<ShiftType, Integer>(null, 0)); // just so that all chunks are processed
+        boolean isStarting = true;
+        for (int i = 0; i < chunks.size(); i++) {
+            final Pair<ShiftType, Integer> currentChunk = chunks.get(i);
+            final ShiftType currentShiftType = currentChunk.getFirst();
+            if (currentShiftType == null) { // consecutive working days are over, evaluate
+                if (isStarting) {
+                    totalViolations += SuccessionEvaluator.countViolations(consecutiveBefore, consecutives, minConsecutive, maxConsecutive);
+                    isStarting = false;
+                } else {
+                    totalViolations += SuccessionEvaluator.countViolations(consecutives, minConsecutive, maxConsecutive);
+                }
+                consecutives = 0;
+            } else {
+                consecutives += currentChunk.getSecond();
+            }
+        }
+        return totalViolations;
+    }
+
+    private static int countViolations(final int consecutive, final int minAllowedConsecutive, final int maxAllowedConsecutive) {
+        if (consecutive > maxAllowedConsecutive) {
+            return consecutive - maxAllowedConsecutive;
+        } else if (consecutive < minAllowedConsecutive) {
+            return minAllowedConsecutive - consecutive;
+        }
+        return 0;
+    }
+
+    private static int countViolations(final int consecutiveBeforeMonday, final int consecutiveIncludingBeforeMonday, final int minAllowedConsecutive, final int maxAllowedConsecutive) {
+        if (consecutiveIncludingBeforeMonday < minAllowedConsecutive) {
+            return Math.min(consecutiveIncludingBeforeMonday - consecutiveBeforeMonday, minAllowedConsecutive - consecutiveIncludingBeforeMonday);
+        } else if (consecutiveIncludingBeforeMonday > maxAllowedConsecutive) {
+            return Math.min(consecutiveIncludingBeforeMonday - consecutiveBeforeMonday, consecutiveIncludingBeforeMonday - maxAllowedConsecutive);
+        }
+        return 0;
+    }
+
+    private static final List<Pair<ShiftType, Integer>> tokenize(final NurseWorkWeek week, final ShiftType previousShiftType, final int previousCount) {
+        int unbrokenCount = previousCount;
+        ShiftType previousShift = previousShiftType;
+        final List<Pair<ShiftType, Integer>> chunks = new ArrayList<Pair<ShiftType, Integer>>();
+        DayOfWeek currentDay = DayOfWeek.MONDAY;
+        do {
+            final ShiftType currentShift = week.isOverbooked(currentDay) ? previousShift : week.getShiftType(currentDay);
+            if (currentShift == previousShift) {
+                unbrokenCount++;
+            } else {
+                // shift type has just changed; add chunk
+                final Pair<ShiftType, Integer> chunk = new Pair<ShiftType, Integer>(previousShift, unbrokenCount);
+                chunks.add(chunk);
+                unbrokenCount = 1;
+            }
+            previousShift = currentShift;
+            currentDay = currentDay.getNext();
+        } while (currentDay != null);
+        if (unbrokenCount > 0) {
+            final Pair<ShiftType, Integer> chunk = new Pair<ShiftType, Integer>(previousShift, unbrokenCount);
+            chunks.add(chunk);
+        }
+        return chunks;
+    }
+
 }

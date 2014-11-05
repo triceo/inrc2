@@ -3,9 +3,10 @@ package org.optaplanner.examples.inrc2.domain;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
@@ -13,12 +14,10 @@ import java.util.SortedMap;
 import org.optaplanner.core.api.domain.solution.PlanningEntityCollectionProperty;
 import org.optaplanner.core.api.domain.solution.PlanningSolution;
 import org.optaplanner.core.api.domain.solution.Solution;
-import org.optaplanner.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
+import org.optaplanner.core.api.score.buildin.hardsoft.HardSoftScore;
 
 @PlanningSolution
-public class Roster implements Solution<HardMediumSoftScore> {
-
-    private int consecutiveDayOffViolationsForUnusedNurses;
+public class Roster implements Solution<HardSoftScore> {
 
     private Set<Contract> contracts;
 
@@ -28,6 +27,8 @@ public class Roster implements Solution<HardMediumSoftScore> {
 
     private String id;
 
+    private int maximumPenaltyForConsecutiveDaysOff = 0;
+
     private int numWeeksTotal;
 
     private Set<Nurse> nurses;
@@ -36,11 +37,9 @@ public class Roster implements Solution<HardMediumSoftScore> {
 
     private Set<Requirement> requirements;
 
-    private Map<ShiftType, Map<Skill, Requirement>> requirementsByShiftTypeAndSkill;
+    private HardSoftScore score;
 
-    private HardMediumSoftScore score;
-
-    private final Set<Shift> shifts = new LinkedHashSet<Shift>();
+    private final List<Shift> shifts = new LinkedList<Shift>();
 
     private Set<ShiftType> shiftTypes;
 
@@ -79,56 +78,46 @@ public class Roster implements Solution<HardMediumSoftScore> {
             }
             a.get(st).put(requirement.getSkill(), requirement);
         }
-        this.requirementsByShiftTypeAndSkill = Collections.unmodifiableMap(a);
         this.requirements = new LinkedHashSet<Requirement>(requirements);
+        // assemble nurses suitable for a particular skill
+        final Map<Skill, Set<Nurse>> suitableNursesPerSkill = new HashMap<Skill, Set<Nurse>>();
+        for (final Nurse n : this.nurses) {
+            // calculate the total maximum amount of day off penalties
+            final int consecutiveBeforeMonday = n.getNumPreviousConsecutiveDaysOff();
+            final int consecutiveIncludingBeforeMonday = consecutiveBeforeMonday + DayOfWeek.values().length;
+            final int minAllowedConsecutive = n.getContract().getMinConsecutiveDaysOff();
+            final int maxAllowedConsecutive = n.getContract().getMaxConsecutiveDaysOff();
+            if (consecutiveIncludingBeforeMonday < minAllowedConsecutive) {
+                this.maximumPenaltyForConsecutiveDaysOff += Math.min(consecutiveIncludingBeforeMonday - consecutiveBeforeMonday, minAllowedConsecutive - consecutiveIncludingBeforeMonday);
+            } else if (consecutiveIncludingBeforeMonday > maxAllowedConsecutive) {
+                this.maximumPenaltyForConsecutiveDaysOff += Math.min(consecutiveIncludingBeforeMonday - consecutiveBeforeMonday, consecutiveIncludingBeforeMonday - maxAllowedConsecutive);
+            }
+            for (final Skill s : n.getSkills()) {
+                if (!suitableNursesPerSkill.containsKey(s)) {
+                    suitableNursesPerSkill.put(s, new LinkedHashSet<Nurse>());
+                }
+                suitableNursesPerSkill.get(s).add(n);
+            }
+        }
         // and now create the entities
-        final Set<Nurse> unusedNurses = new HashSet<Nurse>();
-        for (final DayOfWeek day : DayOfWeek.values()) {
-            for (final Nurse nurse : this.nurses) {
-                // only add those skills to the nurse that make sense; will eliminate a lot of useless selection
-                final Map<ShiftType, Set<Skill>> nurseSpecificRequirements = new HashMap<ShiftType, Set<Skill>>();
-                for (final Requirement r : requirements) {
-                    if (!r.isRequired(day)) {
-                        // on this day, we don't need a nurse of a particular skill for a particular shift type
-                        continue;
-                    } else if (!nurse.getSkills().contains(r.getSkill())) {
-                        // this nurse does not have that particular skill
-                        continue;
-                    }
-                    final ShiftType st = r.getShiftType();
-                    if (!nurseSpecificRequirements.containsKey(st)) {
-                        nurseSpecificRequirements.put(st, new LinkedHashSet<Skill>());
-                    }
-                    nurseSpecificRequirements.get(st).add(r.getSkill());
-                }
-                if (nurseSpecificRequirements.size() == 0) {
-                    // this particular nurse is not required at all
-                    unusedNurses.add(nurse);
-                    continue;
-                }
-                this.shifts.add(new Shift(nurse, day, nurseSpecificRequirements));
-            }
-        }
-        // sum up requirements to know how many at most we need
         for (final Requirement r : this.requirements) {
+            final ShiftType st = r.getShiftType();
+            final Skill sk = r.getSkill();
+            final Set<Nurse> suitableNurses = suitableNursesPerSkill.get(sk);
             for (final DayOfWeek d : DayOfWeek.values()) {
-                this.totalMinimalRequirements += r.getMinimal(d);
-                this.totalOptimalRequirements += r.getOptimal(d);
+                final int minimal = r.getMinimal(d);
+                final int optimal = r.getOptimal(d);
+                this.totalMinimalRequirements += minimal;
+                this.totalOptimalRequirements += optimal;
+                for (int i = 0; i < optimal; i++) {
+                    if (i < minimal) {
+                        this.shifts.add(new MandatoryShift(d, st, sk, suitableNurses));
+                    } else {
+                        this.shifts.add(new OptionalShift(d, st, sk, suitableNurses));
+                    }
+                }
             }
         }
-        /*
-         * calculate the day-off penalties for unused nurses; they will never make it through the score calculator, so
-         * this is essentially a constant that needs to be included.
-         */
-        for (final Nurse n : unusedNurses) {
-            final int previous = n.getNumPreviousConsecutiveDaysOff();
-            final int current = DayOfWeek.values().length;
-            this.consecutiveDayOffViolationsForUnusedNurses += Math.min(current, previous + current);
-        }
-    }
-
-    public int getConsecutiveDayOffViolationsForUnusedNurses() {
-        return this.consecutiveDayOffViolationsForUnusedNurses;
     }
 
     public Contract getContractById(final String id) {
@@ -145,6 +134,10 @@ public class Roster implements Solution<HardMediumSoftScore> {
 
     public String getId() {
         return this.id;
+    }
+
+    public int getMaximumPenaltyForConsecutiveDaysOff() {
+        return this.maximumPenaltyForConsecutiveDaysOff;
     }
 
     public int getNumWeeksTotal() {
@@ -165,12 +158,8 @@ public class Roster implements Solution<HardMediumSoftScore> {
         return null;
     }
 
-    public Map<Skill, Requirement> getRequirementByShiftTypeAndSkill(final ShiftType type) {
-        return this.requirementsByShiftTypeAndSkill.get(type);
-    }
-
     @Override
-    public HardMediumSoftScore getScore() {
+    public HardSoftScore getScore() {
         return this.score;
     }
 
@@ -204,7 +193,7 @@ public class Roster implements Solution<HardMediumSoftScore> {
     }
 
     @Override
-    public void setScore(final HardMediumSoftScore score) {
+    public void setScore(final HardSoftScore score) {
         this.score = score;
     }
 
