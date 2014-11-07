@@ -22,6 +22,7 @@ public class SuccessionEvaluator {
         int totalViolations = 0;
         final List<Pair<ShiftType, Integer>> chunks = SuccessionEvaluator.tokenize(week, week.getNurse().getPreviousAssignedShiftType(), consecutiveBefore);
         for (int i = 0; i < chunks.size(); i++) {
+            final boolean isEnding = (i == chunks.size() - 1);
             final Pair<ShiftType, Integer> chunk = chunks.get(i);
             final ShiftType type = chunk.getFirst();
             if (type == null) {
@@ -31,7 +32,9 @@ public class SuccessionEvaluator {
             final int minConsecutive = type.getMinConsecutiveAssignments();
             final int maxConsecutive = type.getMaxConsecutiveAssignments();
             if (i == 0) {
-                totalViolations += SuccessionEvaluator.countViolations(consecutiveBefore, consecutives, minConsecutive, maxConsecutive);
+                totalViolations += SuccessionEvaluator.countViolationsOnStart(consecutiveBefore, consecutives, minConsecutive, maxConsecutive);
+            } else if (isEnding) {
+                totalViolations += SuccessionEvaluator.countViolationsOnEnd(consecutives, maxConsecutive);
             } else {
                 totalViolations += SuccessionEvaluator.countViolations(consecutives, minConsecutive, maxConsecutive);
             }
@@ -53,10 +56,14 @@ public class SuccessionEvaluator {
         for (int i = 0; i < chunks.size(); i++) {
             final Pair<ShiftType, Integer> currentChunk = chunks.get(i);
             final ShiftType currentShiftType = currentChunk.getFirst();
+            boolean isEnding = (i == chunks.size() - 1);
             if (currentShiftType == null) { // consecutive working days are over, evaluate
                 if (isStarting) {
-                    totalViolations += SuccessionEvaluator.countViolations(consecutiveBefore, consecutives, minConsecutive, maxConsecutive);
+                    totalViolations += SuccessionEvaluator.countViolationsOnStart(consecutiveBefore, consecutives, minConsecutive, maxConsecutive);
                     isStarting = false;
+                } else if (isEnding) {
+                    totalViolations += SuccessionEvaluator.countViolationsOnEnd(consecutives, maxConsecutive);
+                    isEnding = false;
                 } else {
                     totalViolations += SuccessionEvaluator.countViolations(consecutives, minConsecutive, maxConsecutive);
                 }
@@ -77,9 +84,16 @@ public class SuccessionEvaluator {
         return 0;
     }
 
-    private static int countViolations(final int consecutiveBeforeMonday, final int consecutiveIncludingBeforeMonday, final int minAllowedConsecutive, final int maxAllowedConsecutive) {
+    private static int countViolationsOnEnd(final int consecutive, final int maxAllowedConsecutive) {
+        if (consecutive > maxAllowedConsecutive) {
+            return consecutive - maxAllowedConsecutive;
+        }
+        return 0;
+    }
+
+    private static int countViolationsOnStart(final int consecutiveBeforeMonday, final int consecutiveIncludingBeforeMonday, final int minAllowedConsecutive, final int maxAllowedConsecutive) {
         if (consecutiveIncludingBeforeMonday < minAllowedConsecutive) {
-            return Math.min(consecutiveIncludingBeforeMonday - consecutiveBeforeMonday, minAllowedConsecutive - consecutiveIncludingBeforeMonday);
+            return minAllowedConsecutive - consecutiveIncludingBeforeMonday;
         } else if (consecutiveIncludingBeforeMonday > maxAllowedConsecutive) {
             return Math.min(consecutiveIncludingBeforeMonday - consecutiveBeforeMonday, consecutiveIncludingBeforeMonday - maxAllowedConsecutive);
         }
