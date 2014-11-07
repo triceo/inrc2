@@ -17,14 +17,11 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
     private static final int TOTAL_ASSIGNMENTS_WEIGHT = 20;
     private static final int WORKING_WEEKENDS_WEIGHT = 30;
 
-    private NurseTracker nurseTracker;
+    private ScoreKeeper keeper;
     private Nurse previousNurse;
 
-    private StaffingTracker staffingTracker;
-
     private void addShift(final Shift entity) {
-        this.nurseTracker.add(entity);
-        this.staffingTracker.add(entity);
+        this.keeper.add(entity);
     }
 
     @Override
@@ -69,59 +66,54 @@ public class Inrc2IncrementalScoreCalculator implements IncrementalScoreCalculat
 
     @Override
     public HardSoftScore calculateScore() {
-        final int hard = -(this.nurseTracker.countInvalidShiftSuccessions() +
-                this.staffingTracker.countNursesMissingFromMinimal() +
-                this.nurseTracker.countOverbookedNurses());
-        final int soft = -(this.nurseTracker.countIgnoredShiftPreferences() * Inrc2IncrementalScoreCalculator.PREFERENCE_WEIGHT +
-                this.nurseTracker.countIncompleteWeekends() * Inrc2IncrementalScoreCalculator.COMPLETE_WEEKENDS_WEIGHT +
-                this.nurseTracker.countWeekendsOutOfBounds() * Inrc2IncrementalScoreCalculator.WORKING_WEEKENDS_WEIGHT +
-                this.nurseTracker.countAssignmentsOutOfBounds() * Inrc2IncrementalScoreCalculator.TOTAL_ASSIGNMENTS_WEIGHT +
-                this.staffingTracker.countNursesMissingFromOptimal() * Inrc2IncrementalScoreCalculator.SUBOMPTIMAL_WEIGHT +
-                this.nurseTracker.countConsecutiveWorkingDayViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_DAYS_ON_WEIGHT +
-                this.nurseTracker.countConsecutiveShiftTypeViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_SHIFTS_WEIGHT +
-                this.nurseTracker.countConsecutiveDayOffViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_DAYS_OFF_WEIGHT);
+        final int hard = -(this.keeper.getInvalidShiftSuccessionCount() +
+                this.keeper.getNurseMissingFromMinimalCount() +
+                this.keeper.getOverbookedNurseCount());
+        final int soft = -(this.keeper.countIgnoredShiftPreferences() * Inrc2IncrementalScoreCalculator.PREFERENCE_WEIGHT +
+                this.keeper.getIncompleteWeekendsCount() * Inrc2IncrementalScoreCalculator.COMPLETE_WEEKENDS_WEIGHT +
+                this.keeper.getWeekendsOverLimitCount() * Inrc2IncrementalScoreCalculator.WORKING_WEEKENDS_WEIGHT +
+                this.keeper.getAssignmentsOutOfBoundsCount() * Inrc2IncrementalScoreCalculator.TOTAL_ASSIGNMENTS_WEIGHT +
+                this.keeper.getNurseMissingFromOptimalCount() * Inrc2IncrementalScoreCalculator.SUBOMPTIMAL_WEIGHT +
+                this.keeper.getConsecutiveWorkingDayViolationsCount() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_DAYS_ON_WEIGHT +
+                this.keeper.getConsecutiveShiftTypeViolationsCount() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_SHIFTS_WEIGHT +
+                this.keeper.getConsecutiveDayOffViolationsCount() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_DAYS_OFF_WEIGHT);
         return HardSoftScore.valueOf(hard, soft);
     }
 
     public HardSoftScore calculateScoreWithOutput() {
-        System.out.println("Illegal shift type succession constraints: " + this.nurseTracker.countInvalidShiftSuccessions());
-        System.out.println("Minimal coverage constraints:              " + this.staffingTracker.countNursesMissingFromMinimal());
-        System.out.println("Total assignment constraints:              " + this.nurseTracker.countAssignmentsOutOfBounds() * Inrc2IncrementalScoreCalculator.TOTAL_ASSIGNMENTS_WEIGHT);
-        System.out.println("Consecutive constraints:                   " + (this.nurseTracker.countConsecutiveWorkingDayViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_DAYS_ON_WEIGHT + this.nurseTracker.countConsecutiveShiftTypeViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_SHIFTS_WEIGHT));
-        System.out.println("Non working days constraints:              " + this.nurseTracker.countConsecutiveDayOffViolations() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_DAYS_OFF_WEIGHT);
-        System.out.println("Preferences:                               " + this.nurseTracker.countIgnoredShiftPreferences() * Inrc2IncrementalScoreCalculator.PREFERENCE_WEIGHT);
-        System.out.println("Max working weekend:                       " + this.nurseTracker.countWeekendsOutOfBounds() * Inrc2IncrementalScoreCalculator.WORKING_WEEKENDS_WEIGHT);
-        System.out.println("Complete weekends:                         " + this.nurseTracker.countIncompleteWeekends() * Inrc2IncrementalScoreCalculator.COMPLETE_WEEKENDS_WEIGHT);
-        System.out.println("Optimal coverage constraints:              " + this.staffingTracker.countNursesMissingFromOptimal() * Inrc2IncrementalScoreCalculator.SUBOMPTIMAL_WEIGHT);
+        System.out.println("Illegal shift type succession constraints: " + this.keeper.getInvalidShiftSuccessionCount());
+        System.out.println("Minimal coverage constraints:              " + this.keeper.getNurseMissingFromMinimalCount());
+        System.out.println("Total assignment constraints:              " + this.keeper.getAssignmentsOutOfBoundsCount() * Inrc2IncrementalScoreCalculator.TOTAL_ASSIGNMENTS_WEIGHT);
+        System.out.println("Consecutive constraints (On):              " + this.keeper.getConsecutiveWorkingDayViolationsCount() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_DAYS_ON_WEIGHT);
+        System.out.println("Consecutive constraints (Shift):           " + this.keeper.getConsecutiveShiftTypeViolationsCount() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_SHIFTS_WEIGHT);
+        System.out.println("Non working days constraints:              " + this.keeper.getConsecutiveDayOffViolationsCount() * Inrc2IncrementalScoreCalculator.CONSECUTIVE_DAYS_OFF_WEIGHT);
+        System.out.println("Preferences:                               " + this.keeper.countIgnoredShiftPreferences() * Inrc2IncrementalScoreCalculator.PREFERENCE_WEIGHT);
+        System.out.println("Max working weekend:                       " + this.keeper.getWeekendsOverLimitCount() * Inrc2IncrementalScoreCalculator.WORKING_WEEKENDS_WEIGHT);
+        System.out.println("Complete weekends:                         " + this.keeper.getIncompleteWeekendsCount() * Inrc2IncrementalScoreCalculator.COMPLETE_WEEKENDS_WEIGHT);
+        System.out.println("Optimal coverage constraints:              " + this.keeper.getNurseMissingFromOptimalCount() * Inrc2IncrementalScoreCalculator.SUBOMPTIMAL_WEIGHT);
         return this.calculateScore();
     }
 
     private void onNurseSet(final Shift entity) {
-        this.nurseTracker.add(entity); // nurse has been assigned
-        this.staffingTracker.add(entity);
+        this.keeper.add(entity); // nurse has been assigned
     }
 
     private void onNurseUnset(final Shift entity, final Nurse previous) {
-        this.nurseTracker.remove(entity, previous); // nurse has been unassigned
-        this.staffingTracker.remove(entity, previous);
+        this.keeper.remove(entity, previous); // nurse has been unassigned
     }
 
     private void onNurseUpdated(final Shift entity, final Nurse previous) {
-        this.nurseTracker.remove(entity, previous);
-        this.nurseTracker.add(entity);
-        this.staffingTracker.remove(entity, previous);
-        this.staffingTracker.add(entity);
+        this.keeper.remove(entity, previous);
+        this.keeper.add(entity);
     }
 
     private void removeShift(final Shift entity) {
-        this.nurseTracker.remove(entity);
-        this.staffingTracker.remove(entity);
+        this.keeper.remove(entity);
     }
 
     @Override
     public void resetWorkingSolution(final Roster workingSolution) {
-        this.nurseTracker = new NurseTracker(workingSolution);
-        this.staffingTracker = new StaffingTracker(workingSolution);
+        this.keeper = new ScoreKeeper(workingSolution);
         for (final Shift shift : workingSolution.getShifts()) {
             this.addShift(shift);
         }

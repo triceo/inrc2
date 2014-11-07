@@ -32,7 +32,6 @@ public class Roster implements Solution<HardSoftScore> {
     private int numWeeksTotal;
 
     private Set<Nurse> nurses;
-
     private SortedMap<String, Nurse> nursesById;
 
     private Set<Requirement> requirements;
@@ -53,6 +52,10 @@ public class Roster implements Solution<HardSoftScore> {
     private int totalMinimalRequirements = 0;
 
     private int totalOptimalRequirements = 0;
+
+    private int totalPreviousAssignmentsOutsideBounds = 0;
+
+    private int totalPreviousWorkingWeekendsOverLimit = 0;
 
     protected Roster() {
         // planner cloning prevents immutability
@@ -82,6 +85,21 @@ public class Roster implements Solution<HardSoftScore> {
         // assemble nurses suitable for a particular skill
         final Map<Skill, Set<Nurse>> suitableNursesPerSkill = new HashMap<Skill, Set<Nurse>>();
         for (final Nurse n : this.nurses) {
+            // penalize already spent weekends
+            final int previousWorkingWeekends = n.getNumPreviousWorkingWeekends();
+            final int maxAllowedWorkingWeekends = n.getContract().getMaxWorkingWeekends();
+            if (previousWorkingWeekends > maxAllowedWorkingWeekends) {
+                this.totalPreviousWorkingWeekendsOverLimit += previousWorkingWeekends - maxAllowedWorkingWeekends;
+            }
+            // penalize already spent assignments
+            final int previousAssignments = n.getNumPreviousAssignments();
+            final int minAllowedAssignments = n.getContract().getMinAssignments();
+            final int maxAllowedAssignments = n.getContract().getMaxAssignments();
+            if (previousAssignments < minAllowedAssignments) {
+                this.totalPreviousAssignmentsOutsideBounds += minAllowedAssignments - previousAssignments;
+            } else if (previousAssignments > maxAllowedAssignments) {
+                this.totalPreviousAssignmentsOutsideBounds += previousAssignments - maxAllowedAssignments;
+            }
             // calculate the total maximum amount of day off penalties
             final int consecutiveBeforeMonday = n.getNumPreviousConsecutiveDaysOff();
             final int consecutiveIncludingBeforeMonday = consecutiveBeforeMonday + DayOfWeek.values().length;
@@ -190,6 +208,14 @@ public class Roster implements Solution<HardSoftScore> {
 
     public int getTotalOptimalRequirements() {
         return this.totalOptimalRequirements;
+    }
+
+    public int getTotalPreviousAssignmentsOutsideBounds() {
+        return this.totalPreviousAssignmentsOutsideBounds;
+    }
+
+    public int getTotalPreviousWorkingWeekendsOverLimit() {
+        return this.totalPreviousWorkingWeekendsOverLimit;
     }
 
     @Override
