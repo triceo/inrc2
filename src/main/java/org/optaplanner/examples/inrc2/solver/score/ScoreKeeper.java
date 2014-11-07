@@ -53,10 +53,7 @@ class ScoreKeeper {
                 new InvalidSuccessionCounter(),
                 new IncompleteWeekendCounter(),
                 new OutOfBoundsWeekendCounter(),
-                new OutOfBoundsAssignmentCounter(),
-                new ConsecutiveShiftCounter(),
-                new ConsecutiveWorkingDayCounter(),
-                new ConsecutiveDayOffCounter()
+                new OutOfBoundsAssignmentCounter()
         };
     }
 
