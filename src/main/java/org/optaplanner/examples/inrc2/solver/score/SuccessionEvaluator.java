@@ -17,30 +17,6 @@ public class SuccessionEvaluator {
 
     }
 
-    public static int countConsecutiveDayOffViolations(final NurseWorkWeek week) {
-        final Nurse nurse = week.getNurse();
-        final int consecutiveBefore = nurse.getNumPreviousConsecutiveDaysOff();
-        final Contract contract = nurse.getContract();
-        final int minConsecutive = contract.getMinConsecutiveDaysOff();
-        final int maxConsecutive = contract.getMaxConsecutiveDaysOff();
-        int totalViolations = 0;
-        final List<Pair<ShiftType, Integer>> chunks = SuccessionEvaluator.tokenize(week, week.getNurse().getPreviousAssignedShiftType(), consecutiveBefore);
-        for (int i = 0; i < chunks.size(); i++) {
-            final Pair<ShiftType, Integer> chunk = chunks.get(i);
-            final ShiftType type = chunk.getFirst();
-            if (type != null) { // not a day off
-                continue;
-            }
-            final int consecutives = chunk.getSecond();
-            if (i == 0) {
-                totalViolations += SuccessionEvaluator.countViolations(consecutiveBefore, consecutives, minConsecutive, maxConsecutive);
-            } else {
-                totalViolations += SuccessionEvaluator.countViolations(consecutives, minConsecutive, maxConsecutive);
-            }
-        }
-        return totalViolations;
-    }
-
     public static int countConsecutiveShiftTypeViolations(final NurseWorkWeek week) {
         final int consecutiveBefore = week.getNurse().getNumPreviousConsecutiveAssignmentsOfSameShiftType();
         int totalViolations = 0;
@@ -110,7 +86,7 @@ public class SuccessionEvaluator {
         return 0;
     }
 
-    private static final List<Pair<ShiftType, Integer>> tokenize(final NurseWorkWeek week, final ShiftType previousShiftType, final int previousCount) {
+    protected static final List<Pair<ShiftType, Integer>> tokenize(final NurseWorkWeek week, final ShiftType previousShiftType, final int previousCount) {
         int unbrokenCount = previousCount;
         ShiftType previousShift = previousShiftType;
         final List<Pair<ShiftType, Integer>> chunks = new ArrayList<Pair<ShiftType, Integer>>();
