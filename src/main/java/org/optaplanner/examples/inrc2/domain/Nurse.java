@@ -23,14 +23,33 @@ public class Nurse {
     private final Set<Skill> skills;
 
     public Nurse(final String name, final Contract contract, final Set<Skill> hasSkills, final Set<ShiftOff> shiftsOff, final ShiftType previousAssignedShiftType, final int numPreviousAssignments, final int numPreviousConsecutiveAssignments, final int numPreviousConsecutiveDaysOn, final int numPreviousConsecutiveDaysOff, final int numPreviousWorkingWeekends) {
-        this.id = name;
+        // basic sanity checks
+        if (previousAssignedShiftType == null) {
+            if (numPreviousConsecutiveAssignments > 0) {
+                throw new IllegalStateException("No immediately previous shift, yet previous consecutive assignments > 0.");
+            } else if (numPreviousConsecutiveDaysOn > 0) {
+                throw new IllegalStateException("No immediately previous shift, yet previous consecutive days on > 0.");
+            } else if (numPreviousConsecutiveDaysOff < 1) {
+                throw new IllegalStateException("No immediately previous shift, yet previous consecutive days off < 1.");
+            }
+        } else {
+            if (numPreviousConsecutiveDaysOff > 0) {
+                throw new IllegalStateException("Have immediately previous shift, yet previous consecutive days off > 0.");
+            } else if (numPreviousConsecutiveAssignments < 1) {
+                throw new IllegalStateException("Have immediately previous shift, yet previous consecutive assignments < 1.");
+            } else if (numPreviousConsecutiveDaysOn < 1) {
+                throw new IllegalStateException("Have immediately previous shift, yet previous consecutive days on < 1.");
+            }
+        }
         if (contract == null) {
             throw new IllegalArgumentException("No contract for nurse " + name);
         }
-        this.contract = contract;
         if (hasSkills.isEmpty()) {
             throw new IllegalArgumentException("No skills for nurse " + name);
         }
+        // and fill with data
+        this.id = name;
+        this.contract = contract;
         this.skills = Collections.unmodifiableSet(new LinkedHashSet<Skill>(hasSkills));
         this.previousAssignedShiftType = previousAssignedShiftType;
         this.numPreviousAssignments = numPreviousAssignments;
